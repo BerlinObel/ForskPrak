@@ -41,7 +41,6 @@ def grid_particle(elements,starting_size,n_atoms_added,n_hops,bond_score,het_sco
     # neighbor library, symbol list and possible bonds
     edge_lib = np.array(neighbor_list('ij',atoms,cutoff=lc*0.9)).transpose()
     symbol_lib = atoms.get_chemical_symbols()
-
     bonds = np.array([set(a) for a in list(itertools.combinations_with_replacement(elements, 2))])
 
     # find ids of initial particle by distance from center
@@ -63,7 +62,6 @@ def grid_particle(elements,starting_size,n_atoms_added,n_hops,bond_score,het_sco
     # Shuffle list of surface element ids and set up 3D grid
     element_list = list(itertools.chain.from_iterable([[metal_idx] * int(n) for metal_idx, n in n_each_element.items()]))
     np.random.shuffle(element_list)
-
     for id in ids_ranked[:starting_size]:
         symbol_lib[id] = element_list.pop()
 
@@ -106,14 +104,12 @@ def grid_particle(elements,starting_size,n_atoms_added,n_hops,bond_score,het_sco
                 continue
         # pick best scoring candidate
         best_cand = candidates[np.argmax(cand_score)]
-
         # update symbol library
         symbol_lib[best_cand] = rnd_symbol
 
         # add chosen candidate edges to particle graph
         graph = np.r_[graph,avail_edges[avail_edges[:, 1] == best_cand]]
         graph = np.r_[graph,avail_edges[avail_edges[:, 1] == best_cand][:,::-1]]
-
     # set symbols for the atoms object and delete ghost atoms
     atoms.set_chemical_symbols(symbol_lib)
 
@@ -183,7 +179,7 @@ for kwargs in ParameterGrid(kwarg_grid):
             file.write(f'{len(kwargs["elements"])},{kwargs["n_hops"]},{kwargs["het_mod"]:.2f},{np.median(pval_bootstrap):.2f}\n')
         plt.close()
 
-        """
+
         rand_frac = []
         for bond in bonds:
             sets = np.array([set(a) for a in list(itertools.product(elements,elements))])
@@ -197,8 +193,8 @@ for kwargs in ParameterGrid(kwarg_grid):
         chi2, Ndof, pval = chi2_uncert(means,rand_frac,stds)
         master_array[j,k] = pval
         print(f'Reward: {reward}   Hops: {n_hops}   pval: {pval}')
-        """
-"""
+
+
 # save array
 with open(f'{len(elements)}e.array', 'wb') as output:
     pickle.dump(master_array, output)
@@ -206,4 +202,3 @@ with open(f'{len(elements)}e.array', 'wb') as output:
 # load array
 with open(f'{len(elements)}e.array', 'rb') as input:
     master_array = pickle.load(input)
-"""
