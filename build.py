@@ -132,7 +132,8 @@ def pearsons_chi2(observed_N, expected_N):
 N_particles = 500
 kwarg_grid = {'elements': [sys.argv[1:]],#[elements[:i+2] for i in range(4)],
               'n_hops': range(8),
-              'het_mod': np.linspace(-0.7,0.7,29)}
+              'het_mod': np.linspace(-0.7,0.7,9),
+              'heanp_size': np.linspace(100,1000,9)}
 
 for kwargs in ParameterGrid(kwarg_grid):
 
@@ -140,7 +141,7 @@ for kwargs in ParameterGrid(kwarg_grid):
         pval_bootstrap = []
 
         for i in range(N_particles):
-            atoms = grid_particle(kwargs['elements'],13,250,kwargs['n_hops'],1.0,kwargs['het_mod'],0.0,i)
+            atoms = grid_particle(kwargs['elements'],13,kwargs['heanp_size'],kwargs['n_hops'],1.0,kwargs['het_mod'],0.0,i)
             #traj = Trajectory(f'traj/{len(kwargs["elements"])}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_{str(i).zfill(4)}.traj',atoms=None, mode='w')
             #traj.write(atoms)
             ana_object = analysis.Analysis(atoms, bothways=False)
@@ -170,10 +171,10 @@ for kwargs in ParameterGrid(kwarg_grid):
         ax.vlines(np.median(pval_bootstrap), 0, ax.get_ylim()[1], color='firebrick')
         ax.set(ylim=(0, ax.get_ylim()[1] * 1.2))
         ax.text(0.02, 0.98,r'N$_{elements}$: '+f'{len(kwargs["elements"])}'+'\n'+r'N$_{hops}$: '+f'{kwargs["n_hops"]}'+f'\nBond modifier: {kwargs["het_mod"]:.2f}' +\
-        f'\nMedian p-value = {np.median(pval_bootstrap):.2f}', family='monospace', fontsize=13, transform=ax.transAxes,verticalalignment='top')
+        f'\nMedian p-value = {np.median(pval_bootstrap):.2f} '+f'\nAdded atoms: ' + f'{kwargs["heanp_size"]}', family='monospace', fontsize=13, transform=ax.transAxes,verticalalignment='top')
         ax.set_xlabel(r"Pearson's $\chi^2$ p-value", fontsize=16)
         ax.set_ylabel('Frequency', fontsize=16)
-        fig.savefig(f'pvals/{len(kwargs["elements"])}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}.png')
+        fig.savefig(f'pvals/{len(kwargs["elements"])}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_{kwargs["heanp_size"]}.png')
         with open('grid.txt','a') as file:
             file.write(f'{len(kwargs["elements"])},{kwargs["n_hops"]},{kwargs["het_mod"]:.2f},{np.median(pval_bootstrap):.2f}\n')
         plt.close()
