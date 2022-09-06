@@ -165,7 +165,6 @@ for kwargs in ParameterGrid(kwarg_grid):
             pval_bootstrap.append(pval)
 
         fig, ax = plt.subplots(1, 1, figsize=(8, 8))
-
         ax.hist(pval_bootstrap, bins=25, range=(0, 1), histtype='bar', color='steelblue', alpha=0.7)
         ax.hist(pval_bootstrap, bins=25, range=(0, 1), histtype='step', color='steelblue')
         ax.vlines(np.median(pval_bootstrap), 0, ax.get_ylim()[1], color='firebrick')
@@ -180,6 +179,7 @@ for kwargs in ParameterGrid(kwarg_grid):
         plt.close()
 
 
+        """
         rand_frac = []
         for bond in bonds:
             sets = np.array([set(a) for a in list(itertools.product(elements,elements))])
@@ -193,8 +193,8 @@ for kwargs in ParameterGrid(kwarg_grid):
         chi2, Ndof, pval = chi2_uncert(means,rand_frac,stds)
         master_array[j,k] = pval
         print(f'Reward: {reward}   Hops: {n_hops}   pval: {pval}')
-
-
+        """
+"""
 # save array
 with open(f'{len(elements)}e.array', 'wb') as output:
     pickle.dump(master_array, output)
@@ -202,3 +202,4 @@ with open(f'{len(elements)}e.array', 'wb') as output:
 # load array
 with open(f'{len(elements)}e.array', 'rb') as input:
     master_array = pickle.load(input)
+"""
