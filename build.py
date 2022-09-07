@@ -133,7 +133,7 @@ N_particles = 500
 kwarg_grid = {'elements': [sys.argv[1:]],#[elements[:i+2] for i in range(4)],
               'n_hops': range(8),
               'het_mod': np.linspace(-0.75,0.75,13),
-              'heanp_size': np.logspace(2,4,5)}
+              'heanp_size': np.logspace(2,4,4)}
 
 for kwargs in ParameterGrid(kwarg_grid):
 
@@ -176,7 +176,7 @@ for kwargs in ParameterGrid(kwarg_grid):
         ax.set_ylabel('Frequency', fontsize=16)
         fig.savefig(f'pvals/{len(kwargs["elements"])}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_{kwargs["heanp_size"]}.png')
         with open('grid.txt','a') as file:
-            file.write(f'{len(kwargs["elements"])},{kwargs["n_hops"]},{kwargs["het_mod"]:.2f},{np.median(pval_bootstrap):.2f}\n')
+            file.write(f'{len(kwargs["elements"])},{kwargs["n_hops"]},{kwargs["het_mod"]:.2f},{np.median(pval_bootstrap):.2f},{kwargs["heanp_size"]}\n')
         plt.close()
 
 
