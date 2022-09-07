@@ -34,7 +34,7 @@ def grid_particle(elements,starting_size,n_atoms_added,n_hops,bond_score,het_sco
 
     # make ghost particle
     surfaces = [(1, 0, 0), (1, 1, 0), (1, 1, 1)]
-    layers = [9,9,9]
+    layers = [15,15,15]
     lc = 3.8
     atoms = FaceCenteredCubic('H', surfaces, layers, latticeconstant=lc)
 
@@ -132,8 +132,8 @@ def pearsons_chi2(observed_N, expected_N):
 N_particles = 500
 kwarg_grid = {'elements': [sys.argv[1:]],#[elements[:i+2] for i in range(4)],
               'n_hops': range(8),
-              'het_mod': np.linspace(-0.7,0.7,9),
-              'heanp_size': np.linspace(100,1000,9)}
+              'het_mod': np.linspace(-0.75,0.75,13),
+              'heanp_size': np.logspace(2,4,5)}
 
 for kwargs in ParameterGrid(kwarg_grid):
 
