@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 from scipy import stats
 import pickle
 from ase.io.trajectory import Trajectory
+from ase.build import fcc111
 import iteround, itertools
 from sklearn.model_selection import ParameterGrid
 import sys
@@ -31,12 +32,11 @@ def grid_particle(elements,starting_size,n_atoms_added,n_hops,bond_score,het_sco
 
     # set random seed
     np.random.seed(rnd_seed)
-    print(elements)
-    print(list(itertools.combinations_with_replacement(elements, 2)))
     # make ghost particle
-    surfaces = [(1, 0, 0), (1, 1, 0), (1, 1, 1)]
-    layers = [15,15,15]
+    surfaces = [(1, 0, 0), (0, 1, 0), (1, 1, 1)]
+    layers = [2,2,2]
     lc = 3.8
+    #atoms = fcc111('Au', size=(20,20,1))
     atoms = FaceCenteredCubic('H', surfaces, layers, latticeconstant=lc)
 
     # neighbor library, symbol list and possible bonds
@@ -65,7 +65,6 @@ def grid_particle(elements,starting_size,n_atoms_added,n_hops,bond_score,het_sco
     np.random.shuffle(element_list)
     for id in ids_ranked[:starting_size]:
         symbol_lib[id] = element_list.pop()
-
     while len(element_list) > 0:
         # choice of element added
         rnd_symbol = element_list.pop()
@@ -75,7 +74,7 @@ def grid_particle(elements,starting_size,n_atoms_added,n_hops,bond_score,het_sco
 
         # all outgoing edges from particle
         avail_edges = edges[~np.all(np.isin(edges,graph),axis=1)]
-        #print(f"avail_edges{avail_edges}")
+        # print(f"avail_edges{avail_edges}")
         # all outgoing edges from particle
         rnk_by_bond = Counter(avail_edges[:,1]) # rank edges by number of bonds
 
@@ -83,7 +82,8 @@ def grid_particle(elements,starting_size,n_atoms_added,n_hops,bond_score,het_sco
         candidates, cand_score= [], []
 
         # pick random initial candidate to be added (at least three bonds required)
-        #print([id for id in rnk_by_bond.keys() if rnk_by_bond[id] > 2])
+
+        print([id for id in rnk_by_bond.keys() if rnk_by_bond[id] > 2])
         start_id = np.random.choice([id for id in rnk_by_bond.keys() if rnk_by_bond[id] > 2],1)
 
         candidates.append(start_id[0])
