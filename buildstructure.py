@@ -15,10 +15,11 @@ import pickle
 from ase.io.trajectory import Trajectory
 import iteround, itertools
 from sklearn.model_selection import ParameterGrid
+from ase.io import write
 import sys
 
 def score(id,edges,rnd_symbol,symbols,bond_score,het_score,hom_score):
-    score = 0
+    score = 0.0
     for edge in edges[np.isin(edges[:,1],id)]:
         score += bond_score
         if rnd_symbol != symbols[edge[0]]:
@@ -31,8 +32,6 @@ def grid_particle(elements,starting_size,n_atoms_added,n_hops,bond_score,het_sco
 
     # set random seed
     np.random.seed(rnd_seed)
-    print(elements)
-    print(list(itertools.combinations_with_replacement(elements, 2)))
     # make ghost particle
     surfaces = [(1, 0, 0), (1, 1, 0), (1, 1, 1)]
     layers = [15,15,15]
@@ -131,17 +130,25 @@ def pearsons_chi2(observed_N, expected_N):
     return chi2, Ndof, prob_chi2
 
 N_particles = 500
+
+
 kwarg_grid = {'elements': [sys.argv[1:]],#[elements[:i+2] for i in range(4)],
-              'n_hops': range(8),
-              'het_mod': np.linspace(-0.75,0.75,13)}
+              'n_hops': np.logspace(0,3,4),
+              'het_mod': np.linspace(-1.5,0.5,6),
+              'bond_sc': np.linspace(0,1,3)}
+
 
 for kwargs in ParameterGrid(kwarg_grid):
 
-        bonds = np.array([set(a) for a in list(itertools.combinations_with_replacement(kwargs['elements'], 2))])
-        pval_bootstrap = []
 
+        #bonds = np.array([set(a) for a in list(itertools.combinations_with_replacement(kwargs['elements'], 2))])
+        #pval_bootstrap = []
+        atoms = grid_particle(kwargs['elements'],13,500,int(kwargs['n_hops']),kwargs['bond_sc'],kwargs['het_mod'],0.0,1)
+        view(atoms)
+        write(f'npstruc/{len(kwargs["elements"])}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_{kwargs["bond_sc"]}.png', atoms)
+        """
         for i in range(N_particles):
-            atoms = grid_particle(kwargs['elements'],13,250,kwargs['n_hops'],1.0,kwargs['het_mod'],0.0,i)
+            atoms = grid_particle(kwargs['elements'],13,500,kwargs['n_hops'],kwargs['bond_sc'],kwargs['het_mod'],0.0,i)
             #traj = Trajectory(f'traj/{len(kwargs["elements"])}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_{str(i).zfill(4)}.traj',atoms=None, mode='w')
             #traj.write(atoms)
             ana_object = analysis.Analysis(atoms, bothways=False)
@@ -178,9 +185,9 @@ for kwargs in ParameterGrid(kwarg_grid):
         with open('grid.txt','a') as file:
             file.write(f'{len(kwargs["elements"])},{kwargs["n_hops"]},{kwargs["het_mod"]:.2f},{np.median(pval_bootstrap):.2f},{kwargs["heanp_size"]}\n')
         plt.close()
+"""
 
-
-        """
+"""
         rand_frac = []
         for bond in bonds:
             sets = np.array([set(a) for a in list(itertools.product(elements,elements))])
