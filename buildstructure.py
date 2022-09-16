@@ -133,7 +133,7 @@ N_particles = 500
 
 
 kwarg_grid = {'elements': [sys.argv[1:]],#[elements[:i+2] for i in range(4)],
-              'n_hops': np.logspace(0,3,4),
+              'n_hops': np.logspace(0,2,3),
               'het_mod': np.linspace(-1.5,0.5,6),
               'bond_sc': np.linspace(0,1,3)}
 
@@ -146,7 +146,6 @@ for kwargs in ParameterGrid(kwarg_grid):
         atoms = grid_particle(kwargs['elements'],13,500,int(kwargs['n_hops']),kwargs['bond_sc'],kwargs['het_mod'],0.0,1)
         view(atoms)
         write(f'npstruc/{len(kwargs["elements"])}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_{kwargs["bond_sc"]}.png', atoms)
-        """
         for i in range(N_particles):
             atoms = grid_particle(kwargs['elements'],13,500,kwargs['n_hops'],kwargs['bond_sc'],kwargs['het_mod'],0.0,i)
             #traj = Trajectory(f'traj/{len(kwargs["elements"])}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_{str(i).zfill(4)}.traj',atoms=None, mode='w')

@@ -8,7 +8,6 @@ lines = file1.readlines()
 n_hops = range(8)
 het_mod = np.linspace(-0.75,0.75,13)
 het_mod = [str(round(het,2)) for het in het_mod]
-print(het_mod)
 pvals = np.zeros(shape=(len(n_hops),len(het_mod)),dtype=float)
 pvals400 = np.zeros(shape=(len(n_hops),len(het_mod)),dtype=float)
 pvals2000 = np.zeros(shape=(len(n_hops),len(het_mod)),dtype=float)
