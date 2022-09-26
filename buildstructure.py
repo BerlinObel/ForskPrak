@@ -34,7 +34,7 @@ def grid_particle(elements,starting_size,n_atoms_added,n_hops,bond_score,het_sco
     np.random.seed(rnd_seed)
     # make ghost particle
     surfaces = [(1, 0, 0), (1, 1, 0), (1, 1, 1)]
-    layers = [15,15,15]
+    layers = [11,11,11]
     lc = 3.8
     atoms = FaceCenteredCubic('H', surfaces, layers, latticeconstant=lc)
 
@@ -133,7 +133,7 @@ N_particles = 500
 
 
 kwarg_grid = {'elements': [sys.argv[1:]],#[elements[:i+2] for i in range(4)],
-              'n_hops': np.logspace(0,2,3),
+              'n_hops': np.logspace(0,2,5),
               'het_mod': np.linspace(-1.5,0.5,6),
               'bond_sc': np.linspace(0,1,3)}
 
@@ -141,13 +141,13 @@ kwarg_grid = {'elements': [sys.argv[1:]],#[elements[:i+2] for i in range(4)],
 for kwargs in ParameterGrid(kwarg_grid):
 
 
-        #bonds = np.array([set(a) for a in list(itertools.combinations_with_replacement(kwargs['elements'], 2))])
-        #pval_bootstrap = []
-        atoms = grid_particle(kwargs['elements'],13,500,int(kwargs['n_hops']),kwargs['bond_sc'],kwargs['het_mod'],0.0,1)
-        view(atoms)
-        write(f'npstruc/{len(kwargs["elements"])}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_{kwargs["bond_sc"]}.png', atoms)
+        bonds = np.array([set(a) for a in list(itertools.combinations_with_replacement(kwargs['elements'], 2))])
+        pval_bootstrap = []
+        #atoms = grid_particle(kwargs['elements'],13,500,int(kwargs['n_hops']),kwargs['bond_sc'],kwargs['het_mod'],0.0,1)
+        #view(atoms)
+        #write(f'npstruc/{len(kwargs["elements"])}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_{kwargs["bond_sc"]}.png', atoms)
         for i in range(N_particles):
-            atoms = grid_particle(kwargs['elements'],13,500,kwargs['n_hops'],kwargs['bond_sc'],kwargs['het_mod'],0.0,i)
+            atoms = grid_particle(kwargs['elements'],13,500,int(round(kwargs['n_hops'])),kwargs['bond_sc'],kwargs['het_mod'],0.0,i)
             #traj = Trajectory(f'traj/{len(kwargs["elements"])}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_{str(i).zfill(4)}.traj',atoms=None, mode='w')
             #traj.write(atoms)
             ana_object = analysis.Analysis(atoms, bothways=False)
@@ -158,7 +158,6 @@ for kwargs in ParameterGrid(kwarg_grid):
             all_edges = all_edges[all_edges[:, 0] != all_edges[:, 1]]
 
             symbols = np.array(atoms.get_chemical_symbols())
-
             observed = np.zeros(len(bonds))
             for edge in all_edges:
                 observed[np.argwhere(set(symbols[edge]) == bonds)[0][0]] += 1
@@ -180,11 +179,11 @@ for kwargs in ParameterGrid(kwarg_grid):
         f'\nMedian p-value = {np.median(pval_bootstrap):.2f} '+f'\nAdded atoms: ' + f'{kwargs["heanp_size"]}', family='monospace', fontsize=13, transform=ax.transAxes,verticalalignment='top')
         ax.set_xlabel(r"Pearson's $\chi^2$ p-value", fontsize=16)
         ax.set_ylabel('Frequency', fontsize=16)
-        fig.savefig(f'pvals/{len(kwargs["elements"])}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_{kwargs["heanp_size"]}.png')
-        with open('grid.txt','a') as file:
-            file.write(f'{len(kwargs["elements"])},{kwargs["n_hops"]},{kwargs["het_mod"]:.2f},{np.median(pval_bootstrap):.2f},{kwargs["heanp_size"]}\n')
+        fig.savefig(f'pvalsstruc/{len(kwargs["elements"])}_{int(round(kwargs["n_hops"]))}_{kwargs["het_mod"]:.2f}_{kwargs["bond_sc"]}.png')
+        with open('gridstruc.txt','a') as file:
+            file.write(f'{len(kwargs["elements"])},{int(round(kwargs["n_hops"]))},{kwargs["het_mod"]:.2f},{np.median(pval_bootstrap):.2f},{kwargs["bond_sc"]}\n')
         plt.close()
-"""
+
 
 """
         rand_frac = []
