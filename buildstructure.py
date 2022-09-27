@@ -147,13 +147,13 @@ for kwargs in ParameterGrid(kwarg_grid):
         #view(atoms)
         #write(f'npstruc/{len(kwargs["elements"])}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_{kwargs["bond_sc"]}.png', atoms)
         for i in range(N_particles):
-            atoms = grid_particle(kwargs['elements'],13,500,int(round(kwargs['n_hops'])),kwargs['bond_sc'],kwargs['het_mod'],0.0,i)
+            atoms = grid_particle(kwargs['elements'],13,250,int(round(kwargs['n_hops'])),kwargs['bond_sc'],kwargs['het_mod'],0.0,i)
             #traj = Trajectory(f'traj/{len(kwargs["elements"])}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_{str(i).zfill(4)}.traj',atoms=None, mode='w')
             #traj.write(atoms)
             ana_object = analysis.Analysis(atoms, bothways=False)
             all_edges = np.c_[np.array(list(ana_object.adjacency_matrix[0].keys()), dtype=np.dtype('int,int'))['f0'],
                               np.array(list(ana_object.adjacency_matrix[0].keys()), dtype=np.dtype('int,int'))['f1']]
-
+            print(ana_object.adjacency_matrix[0])
             #remove self-to-self edges
             all_edges = all_edges[all_edges[:, 0] != all_edges[:, 1]]
 
@@ -161,7 +161,7 @@ for kwargs in ParameterGrid(kwarg_grid):
             observed = np.zeros(len(bonds))
             for edge in all_edges:
                 observed[np.argwhere(set(symbols[edge]) == bonds)[0][0]] += 1
-
+            
             expected = []
             for bond in bonds:
                 sets = np.array([set(a) for a in list(itertools.product(kwargs['elements'], kwargs['elements']))])
