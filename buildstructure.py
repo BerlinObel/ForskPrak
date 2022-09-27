@@ -133,8 +133,8 @@ N_particles = 500
 
 
 kwarg_grid = {'elements': [sys.argv[1:]],#[elements[:i+2] for i in range(4)],
-              'n_hops': np.logspace(0,2,5),
-              'het_mod': np.linspace(-1.5,0.5,6),
+              'n_hops': range(8),
+              'het_mod': np.linspace(-0.75,0.75,13),
               'bond_sc': np.linspace(0,1,3)}
 
 
