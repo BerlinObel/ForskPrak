@@ -112,7 +112,7 @@ def grid_particle(elements,starting_size,n_atoms_added,n_hops,bond_score,het_sco
             # random hop to new candidate
                 rnd_hop = np.random.choice(avail_hops[:,1])
                 candidates.append(rnd_hop)
-                cand_score.append(score(rnd_hop, avail_edges, rnd_symbol, symbol_lib, bond_score, het_score, hom_score))
+                cand_score.append(score(rnd_hop, avail_edges, rnd_symbol, symbol_lib, bond_score, het_score, hom_score, rnd_charge, charge_lib, charge_score))
             else:
                 continue
         # pick best scoring candidate
@@ -200,21 +200,21 @@ for kwargs in ParameterGrid(kwarg_grid):
         #pval
         ax[0].hist(pval_bootstrap, bins=25, range=(0, 1), histtype='bar', color='steelblue', alpha=0.7)
         ax[0].hist(pval_bootstrap, bins=25, range=(0, 1), histtype='step', color='steelblue')
-        ax[0].vlines(np.median(pval_bootstrap), 0, ax.get_ylim()[1], color='firebrick')
-        
+        ax[0].vlines(np.median(pval_bootstrap), 0, ax[0].get_ylim()[1], color='firebrick')
+        ax[0].set(ylim=(0, ax[0].get_ylim()[1] * 1.2))
         #ch
         ax[1].hist(pval_bootstrap, bins=25, range=(0, 1), histtype='bar', color='steelblue', alpha=0.7)
         ax[1].hist(pval_bootstrap, bins=25, range=(0, 1), histtype='step', color='steelblue')
-        ax[1].vlines(np.median(pval_bootstrap), 0, ax.get_ylim()[1], color='firebrick')
-        ax.set(ylim=(0, ax.get_ylim()[1] * 1.2))
-        ax.text(0.02, 0.98,r'N$_{elements}$: '+f'{len(kwargs["elements"])}'+'\n'+r'N$_{hops}$: '+f'{kwargs["n_hops"]}'+f'\nBond modifier: {kwargs["het_mod"]:.2f}' +\
-        f'\nMedian p-value = {np.median(pval_bootstrap):.2f} '+f'\Charge score and amount: ' + f'{kwargs["charge_sc"]}_{kwargs["charge_n"]}', family='monospace', fontsize=13, transform=ax.transAxes,verticalalignment='top')
-        ax.set_xlabel(r"Pearson's $\chi^2$ p-value", fontsize=16)
-        ax.set_ylabel('Frequency', fontsize=16)
+        ax[1].vlines(np.median(pval_bootstrap), 0, ax[1].get_ylim()[1], color='firebrick')
+        ax[1].set(ylim=(0, ax[1].get_ylim()[1] * 1.2))
+        ax[0].text(0.02, 0.98,r'N$_{elements}$: '+f'{len(kwargs["elements"])}'+'\n'+r'N$_{hops}$: '+f'{kwargs["n_hops"]}'+f'\nBond modifier: {kwargs["het_mod"]:.2f}' +\
+        f'\nMedian p-value = {np.median(pval_bootstrap):.2f} '+f'\nCharge score and amount: ' + f'{kwargs["charge_sc"]}_{kwargs["charge_n"]}', family='monospace', fontsize=13, transform=ax[0].transAxes,verticalalignment='top')
+        ax[0].set_xlabel(r"Pearson's $\chi^2$ p-value", fontsize=16)
+        ax[0].set_ylabel('Frequency', fontsize=16)
 
         fig.savefig(f'pvalscharge/{len(kwargs["elements"])}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}__{kwargs["charge_sc"]}_{kwargs["charge_n"]}.png')
         with open('gridcharge.txt','a') as file:
-            file.write(f'{len(kwargs["elements"])},{kwargs["n_hops"]},{kwargs["het_mod"]:.2f},{np.median(pval_bootstrap):.2f},{kwargs["charge_sc"]},{kwargs["charge_n"]}\n')
+            file.write(f'{len(kwargs["elements"])},{kwargs["n_hops"]},{kwargs["het_mod"]:.2f},{np.median(pval_bootstrap):.2f},{kwargs["charge_sc"]},{kwargs["charge_n"]},{np.median(pval_charges):.2f}\n')
         plt.close()
 
 
