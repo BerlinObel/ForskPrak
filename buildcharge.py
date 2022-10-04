@@ -70,9 +70,11 @@ def grid_particle(elements,starting_size,n_atoms_added,n_hops,bond_score,het_sco
     n_each_charge = {c: n_atoms_added/len(charges) for c in charges}
     n_each_charge = iteround.saferound(n_each_charge, 0)
     charge_list = list(itertools.chain.from_iterable([[charge_idx] * int(n) for charge_idx, n in n_each_charge.items()]))
+    
     # Shuffle list of surface element ids and set up 3D grid
     element_list = list(itertools.chain.from_iterable([[metal_idx] * int(n) for metal_idx, n in n_each_element.items()]))
     np.random.shuffle(element_list)
+    np.random.shuffle(charge_list)
     for id in ids_ranked[:starting_size]:
         symbol_lib[id] = element_list.pop()
         charge_lib[id] = charge_list.pop()
@@ -179,7 +181,7 @@ for kwargs in ParameterGrid(kwarg_grid):
                 observed[np.argwhere(set(symbols[edge]) == bonds)[0][0]] += 1
                 ch_observed[np.argwhere(set(ch_list[edge]) == ch_bonds)] += 1
 
-
+            
             expected = []
             for bond in bonds:
                 sets = np.array([set(a) for a in list(itertools.product(kwargs['elements'], kwargs['elements']))])
@@ -190,12 +192,15 @@ for kwargs in ParameterGrid(kwarg_grid):
             for ch in ch_bonds:
                 sets = np.array([set(a) for a in list(itertools.product(ch_values, ch_values))])
                 ch_expected.append(sum(ch == sets) / len(sets) * sum(ch_observed))
-
+                
+                
             _, _, pval = pearsons_chi2(observed, expected)
             pval_bootstrap.append(pval)
             _, _, ch_pval = pearsons_chi2(ch_observed, ch_expected)
             pval_charges.append(ch_pval)
-
+        
+            
+           
         fig, ax = plt.subplots(1, 2, figsize=(8, 8),sharey=True,sharex=True)
         #pval
         ax[0].hist(pval_bootstrap, bins=25, range=(0, 1), histtype='bar', color='steelblue', alpha=0.7)
@@ -203,12 +208,12 @@ for kwargs in ParameterGrid(kwarg_grid):
         ax[0].vlines(np.median(pval_bootstrap), 0, ax[0].get_ylim()[1], color='firebrick')
         ax[0].set(ylim=(0, ax[0].get_ylim()[1] * 1.2))
         #ch
-        ax[1].hist(pval_bootstrap, bins=25, range=(0, 1), histtype='bar', color='steelblue', alpha=0.7)
-        ax[1].hist(pval_bootstrap, bins=25, range=(0, 1), histtype='step', color='steelblue')
-        ax[1].vlines(np.median(pval_bootstrap), 0, ax[1].get_ylim()[1], color='firebrick')
+        ax[1].hist(pval_charges, bins=25, range=(0, 1), histtype='bar', color='steelblue', alpha=0.7)
+        ax[1].hist(pval_charges, bins=25, range=(0, 1), histtype='step', color='steelblue')
+        ax[1].vlines(np.median(pval_charges), 0, ax[1].get_ylim()[1], color='firebrick')
         ax[1].set(ylim=(0, ax[1].get_ylim()[1] * 1.2))
         ax[0].text(0.02, 0.98,r'N$_{elements}$: '+f'{len(kwargs["elements"])}'+'\n'+r'N$_{hops}$: '+f'{kwargs["n_hops"]}'+f'\nBond modifier: {kwargs["het_mod"]:.2f}' +\
-        f'\nMedian p-value = {np.median(pval_bootstrap):.2f} '+f'\nCharge score and amount: ' + f'{kwargs["charge_sc"]}_{kwargs["charge_n"]}', family='monospace', fontsize=13, transform=ax[0].transAxes,verticalalignment='top')
+        f'\nMedian p-value = {np.median(pval_bootstrap):.2f} '+f'\nCharge score and amount: ' + f'{kwargs["charge_sc"]}_{kwargs["charge_n"]}'+f'\nMedian p-value = {np.median(pval_charges):.2f} ', family='monospace', fontsize=13, transform=ax[0].transAxes,verticalalignment='top')
         ax[0].set_xlabel(r"Pearson's $\chi^2$ p-value", fontsize=16)
         ax[0].set_ylabel('Frequency', fontsize=16)
 
