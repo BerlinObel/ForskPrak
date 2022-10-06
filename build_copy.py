@@ -140,8 +140,8 @@ n_each_element = {e: kwarg_grid['heanp_size'][0]/len(kwarg_grid['elements'][0]) 
 n_each_element = iteround.saferound(n_each_element, 0)
 
         # Shuffle list of surface element ids and set up 3D grid
-element_list = list(itertools.chain.from_iterable([[metal_idx] * int(n) for metal_idx, n in n_each_element.items()]))
-np.random.shuffle(element_list)
+element_list_final = list(itertools.chain.from_iterable([[metal_idx] * int(n) for metal_idx, n in n_each_element.items()]))
+np.random.shuffle(element_list_final)
 
 
 for kwargs in ParameterGrid(kwarg_grid):
@@ -152,7 +152,7 @@ for kwargs in ParameterGrid(kwarg_grid):
         for i in range(N_particles):
             
      
-            atoms = grid_particle(kwargs['elements'],13,kwargs["heanp_size"],kwargs['n_hops'],1.0,kwargs['het_mod'],0.0,i,element_list)
+            atoms = grid_particle(kwargs['elements'],13,kwargs["heanp_size"],kwargs['n_hops'],1.0,kwargs['het_mod'],0.0,i,element_list_final)
             #traj = Trajectory(f'traj/{len(kwargs["elements"])}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_{str(i).zfill(4)}.traj',atoms=None, mode='w')
             #traj.write(atoms)
             ana_object = analysis.Analysis(atoms, bothways=False)
