@@ -135,7 +135,8 @@ kwarg_grid = {'elements': [sys.argv[1:]],#[elements[:i+2] for i in range(4)],
               'het_mod': np.linspace(-0.75,0.75,2),
               'heanp_size':[250]}
 
-n_each_element = {e: kwarg_grid["heanp_size"]/len(kwarg_grid['elements']) for e in kwarg_grid['elements']}
+
+n_each_element = {e: kwarg_grid['heanp_size'][0]/len(kwarg_grid['elements'][0]) for e in kwarg_grid['elements'][0]}
 n_each_element = iteround.saferound(n_each_element, 0)
 
         # Shuffle list of surface element ids and set up 3D grid
