@@ -27,7 +27,7 @@ def score(id,edges,rnd_symbol,symbols,bond_score,het_score,hom_score):
             score += hom_score
     return score
 
-def grid_particle(elements,starting_size,n_atoms_added,n_hops,bond_score,het_score,hom_score,rnd_seed,element_list):
+def grid_particle(elements,starting_size,n_atoms_added,n_hops,bond_score,het_score,hom_score,rnd_seed,Dubby):
 
     # set random seed
     np.random.seed(rnd_seed)
@@ -56,12 +56,12 @@ def grid_particle(elements,starting_size,n_atoms_added,n_hops,bond_score,het_sco
     # establish starting graph
     graph = edge_lib[np.all(np.isin(edge_lib[:],ids_ranked[:starting_size]),axis=1)]
 
-    # n_each_element = {e: n_atoms_added/len(elements) for e in elements}
-    # n_each_element = iteround.saferound(n_each_element, 0)
+    n_each_element = {e: n_atoms_added/len(elements) for e in elements}
+    n_each_element = iteround.saferound(n_each_element, 0)
 
     # Shuffle list of surface element ids and set up 3D grid
-    # element_list = list(itertools.chain.from_iterable([[metal_idx] * int(n) for metal_idx, n in n_each_element.items()]))
-    # np.random.shuffle(element_list)
+    element_list = list(itertools.chain.from_iterable([[metal_idx] * int(n) for metal_idx, n in n_each_element.items()]))
+    np.random.shuffle(element_list)
 
     for id in ids_ranked[:starting_size]:
         symbol_lib[id],element_list = element_list[-1],element_list[:-1]
@@ -126,22 +126,15 @@ def chi2_uncert(observed_frac,expected_frac,uncertainties):
 def pearsons_chi2(observed_N, expected_N):
     chi2 = np.sum((observed_N - expected_N) ** 2 / expected_N)
     Ndof = len(observed_N) - 1
-    prob_chi2 = stats.chi2.sf(chi2, Ndof)
+    prob_chi2 = stats.chi2.sf(chi2, Ndof)   
     return chi2, Ndof, prob_chi2
 
-N_particles = 250
+N_particles = 50
 kwarg_grid = {'elements': [sys.argv[1:]],#[elements[:i+2] for i in range(4)],
               'n_hops': range(8),
               'het_mod': np.linspace(-0.75,0.75,4),
               'heanp_size':[250]}
 
-
-n_each_element = {e: kwarg_grid['heanp_size'][0]/len(kwarg_grid['elements'][0]) for e in kwarg_grid['elements'][0]}
-n_each_element = iteround.saferound(n_each_element, 0)
-
-        # Shuffle list of surface element ids and set up 3D grid
-que = list(itertools.chain.from_iterable([[metal_idx] * int(n) for metal_idx, n in n_each_element.items()]))
-np.random.shuffle(que)
 
 for kwargs in ParameterGrid(kwarg_grid):
 
@@ -151,37 +144,52 @@ for kwargs in ParameterGrid(kwarg_grid):
        
         for i in range(N_particles):
             
-            elf = np.copy(que)
+            
 
-            atoms = grid_particle(kwargs['elements'],13,kwargs["heanp_size"],kwargs['n_hops'],1.0,kwargs['het_mod'],0.0,i,elf)
+            atoms = grid_particle(kwargs['elements'],13,250,kwargs['n_hops'],1.0,kwargs['het_mod'],0.0,i,False)
+            #dub
+            atomsdub = grid_particle(kwargs['elements'],13,500,kwargs['n_hops'],1.0,kwargs['het_mod'],0.0,i,True)
             #traj = Trajectory(f'traj/{len(kwargs["elements"])}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_{str(i).zfill(4)}.traj',atoms=None, mode='w')
             #traj.write(atoms)
             ana_object = analysis.Analysis(atoms, bothways=False)
             all_edges = np.c_[np.array(list(ana_object.adjacency_matrix[0].keys()), dtype=np.dtype('int,int'))['f0'],
                               np.array(list(ana_object.adjacency_matrix[0].keys()), dtype=np.dtype('int,int'))['f1']]
-
+            #dub
+            ana_object_dub = analysis.Analysis(atomsdub, bothways=False)
+            all_edges_dub = np.c_[np.array(list(ana_object_dub.adjacency_matrix[0].keys()), dtype=np.dtype('int,int'))['f0'],
+                              np.array(list(ana_object_dub.adjacency_matrix[0].keys()), dtype=np.dtype('int,int'))['f1']]
             #remove self-to-self edges
             all_edges = all_edges[all_edges[:, 0] != all_edges[:, 1]]
+            all_edges_dub = all_edges_dub[all_edges_dub[:, 0] != all_edges_dub[:, 1]]
 
             symbols = np.array(atoms.get_chemical_symbols())
+            symbolsdub = np.array(atomsdub.get_chemical_symbols())
 
             observed = np.zeros(len(bonds))
             for edge in all_edges:
                 observed[np.argwhere(set(symbols[edge]) == bonds)[0][0]] += 1
+
+            dubobserved = np.zeros(len(bonds))
+            for edge in all_edges:
+                dubobserved[np.argwhere(set(symbolsdub[edge]) == bonds)[0][0]] += 1
 
             expected = []
             for bond in bonds:
                 sets = np.array([set(a) for a in list(itertools.product(kwargs['elements'], kwargs['elements']))])
                 expected.append(sum(bond == sets) / len(sets) * sum(observed))
 
-            dubobserved = 2*observed
-            dubexpected = 2*np.array(expected)
-            print(observed)
-            print(dubobserved)
-            print(expected)
-            print(dubexpected)
-            _, _, pval = pearsons_chi2(observed, expected)
-            _, _, pval2 = pearsons_chi2(dubobserved, dubobserved)
+            dubexpected = []
+            for bond in bonds:
+                sets = np.array([set(a) for a in list(itertools.product(kwargs['elements'], kwargs['elements']))])
+                dubexpected.append(sum(bond == sets) / len(sets) * sum(dubobserved))
+
+            a1, b1, pval = pearsons_chi2(observed, expected)
+            a2, b2, pval2 = pearsons_chi2(dubobserved, dubexpected)
+
+            print(f'a1: {a1} b1: {b1} pval: {pval}')
+            print(f'a2: {a2} b2: {b2} pval2: {pval2}')
+            print(f"observed: {observed} sum: {sum(observed)}")
+            print(f"dubobserved: {dubobserved} sum: {sum(dubobserved)}\n")
             pval_bootstrap.append(pval)
             pval2_bootstrap.append(pval2)
 
