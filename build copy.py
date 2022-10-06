@@ -10,17 +10,15 @@ from ase.geometry import analysis
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import matplotlib.tri as mtri
 from scipy import stats
 import pickle
 from ase.io.trajectory import Trajectory
 import iteround, itertools
 from sklearn.model_selection import ParameterGrid
-from ase.io import write
 import sys
 
 def score(id,edges,rnd_symbol,symbols,bond_score,het_score,hom_score):
-    score = 0.0
+    score = 0
     for edge in edges[np.isin(edges[:,1],id)]:
         score += bond_score
         if rnd_symbol != symbols[edge[0]]:
@@ -33,9 +31,10 @@ def grid_particle(elements,starting_size,n_atoms_added,n_hops,bond_score,het_sco
 
     # set random seed
     np.random.seed(rnd_seed)
+
     # make ghost particle
     surfaces = [(1, 0, 0), (1, 1, 0), (1, 1, 1)]
-    layers = [15,15,15]
+    layers = [12,12,12]
     lc = 3.8
     atoms = FaceCenteredCubic('H', surfaces, layers, latticeconstant=lc)
 
@@ -131,76 +130,58 @@ def pearsons_chi2(observed_N, expected_N):
     return chi2, Ndof, prob_chi2
 
 N_particles = 500
+kwarg_grid = {'elements': [sys.argv[1:]],#[elements[:i+2] for i in range(4)],
+              'n_hops': range(8),
+              'het_mod': np.linspace(-0.75,0.75,13),
+              'heanp_size':[250]}
 
-
-kwarg_grid = {'elements': sys.argv[1:],#[elements[:i+2] for i in range(4)],
-              'n_hops': np.linspace(0,50,5),#range(8),
-              'het_mod': np.linspace(-0.75,0.75,9),
-              'bond_sc': np.linspace(0,1,5)}
-
-atoms = grid_particle(kwarg_grid['elements'],13,500,500,0,-1.5,0.0,1)
-view(atoms)
-"""
 for kwargs in ParameterGrid(kwarg_grid):
 
-        xy = np.zeros(250)
-        xx = np.zeros(250)
-        yy = np.zeros(250)
         bonds = np.array([set(a) for a in list(itertools.combinations_with_replacement(kwargs['elements'], 2))])
         pval_bootstrap = []
-        atoms = grid_particle(kwargs['elements'],13,500,int(kwargs['n_hops']),kwargs['bond_sc'],kwargs['het_mod'],0.0,1)
-        #write(f'npstruc/{len(kwargs["elements"])}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_{kwargs["bond_sc"]}.png', atoms)
-       
+
         for i in range(N_particles):
-            atoms = grid_particle(kwargs['elements'],13,250,int(round(kwargs['n_hops'])),kwargs['bond_sc'],kwargs['het_mod'],0.0,i)
+            print(i)
+            atoms = grid_particle(kwargs['elements'],13,kwargs["heanp_size"],kwargs['n_hops'],1.0,kwargs['het_mod'],0.0,i)
             #traj = Trajectory(f'traj/{len(kwargs["elements"])}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_{str(i).zfill(4)}.traj',atoms=None, mode='w')
             #traj.write(atoms)
             ana_object = analysis.Analysis(atoms, bothways=False)
             all_edges = np.c_[np.array(list(ana_object.adjacency_matrix[0].keys()), dtype=np.dtype('int,int'))['f0'],
                               np.array(list(ana_object.adjacency_matrix[0].keys()), dtype=np.dtype('int,int'))['f1']]
+
             #remove self-to-self edges
             all_edges = all_edges[all_edges[:, 0] != all_edges[:, 1]]
 
             symbols = np.array(atoms.get_chemical_symbols())
+
             observed = np.zeros(len(bonds))
             for edge in all_edges:
                 observed[np.argwhere(set(symbols[edge]) == bonds)[0][0]] += 1
-            
-            for edge in all_edges:
-                if set(symbols[edge]) == bonds[0]:
-                    xx[edge[:]] += 1 
-                elif set(symbols[edge]) == bonds[1]:
-                    yy[edge[:]] += 1 
-                else:
-                    xy[edge[:]] += 1 
-
 
             expected = []
             for bond in bonds:
                 sets = np.array([set(a) for a in list(itertools.product(kwargs['elements'], kwargs['elements']))])
                 expected.append(sum(bond == sets) / len(sets) * sum(observed))
-            
-
 
             _, _, pval = pearsons_chi2(observed, expected)
             pval_bootstrap.append(pval)
 
-        
         fig, ax = plt.subplots(1, 1, figsize=(8, 8))
         ax.hist(pval_bootstrap, bins=25, range=(0, 1), histtype='bar', color='steelblue', alpha=0.7)
         ax.hist(pval_bootstrap, bins=25, range=(0, 1), histtype='step', color='steelblue')
         ax.vlines(np.median(pval_bootstrap), 0, ax.get_ylim()[1], color='firebrick')
         ax.set(ylim=(0, ax.get_ylim()[1] * 1.2))
         ax.text(0.02, 0.98,r'N$_{elements}$: '+f'{len(kwargs["elements"])}'+'\n'+r'N$_{hops}$: '+f'{kwargs["n_hops"]}'+f'\nBond modifier: {kwargs["het_mod"]:.2f}' +\
-        f'\nMedian p-value = {np.median(pval_bootstrap):.2f} ' +f'\nBond_sc: ' + f'{kwargs["bond_sc"]}', family='monospace', fontsize=13, transform=ax.transAxes,verticalalignment='top')
+        f'\nMedian p-value = {np.median(pval_bootstrap):.2f} '+f'\nAdded atoms: ' + f'{kwargs["heanp_size"]}', family='monospace', fontsize=13, transform=ax.transAxes,verticalalignment='top')
         ax.set_xlabel(r"Pearson's $\chi^2$ p-value", fontsize=16)
         ax.set_ylabel('Frequency', fontsize=16)
-        fig.savefig(f'pvalsstruc/{len(kwargs["elements"])}_{int(round(kwargs["n_hops"]))}_{kwargs["het_mod"]:.2f}_{kwargs["bond_sc"]}.png')
-        with open('gridstruc.txt','a') as file:
-            file.write(f'{len(kwargs["elements"])},{int(round(kwargs["n_hops"]))},{kwargs["het_mod"]:.2f},{np.median(pval_bootstrap):.2f},{kwargs["bond_sc"]}\n')
+        fig.savefig(f'apvals/{len(kwargs["elements"])}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_{kwargs["heanp_size"]}.png')
+        with open('agrid.txt','a') as file:
+            file.write(f'{len(kwargs["elements"])},{kwargs["n_hops"]},{kwargs["het_mod"]:.2f},{np.median(pval_bootstrap):.2f},{kwargs["heanp_size"]}\n')
         plt.close()
+
+
         """
-"""
         rand_frac = []
         for bond in bonds:
             sets = np.array([set(a) for a in list(itertools.product(elements,elements))])

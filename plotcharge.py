@@ -32,25 +32,27 @@ for line in lines:
         
 
 
-fig, ax = plt.subplots(5,3)
+fig, ax = plt.subplots(3,5)
 ax[0,0].imshow(pvals[0,:,:])
-ax[0,1].imshow(pvals_ch2[0,:,:])
-ax[0,2].imshow(pvals_ch3[0,:,:])
-ax[1,0].imshow(pvals[1,:,:])
+ax[1,0].imshow(pvals_ch2[0,:,:])
+ax[2,0].imshow(pvals_ch3[0,:,:])
+ax[0,1].imshow(pvals[1,:,:])
 ax[1,1].imshow(pvals_ch2[1,:,:])
-ax[1,2].imshow(pvals_ch3[1,:,:])
-ax[2,0].imshow(pvals[2,:,:])
-ax[2,1].imshow(pvals_ch2[2,:,:])
+ax[2,1].imshow(pvals_ch3[1,:,:])
+ax[0,2].imshow(pvals[2,:,:])
+ax[1,2].imshow(pvals_ch2[2,:,:])
 ax[2,2].imshow(pvals_ch3[2,:,:])
-ax[3,0].imshow(pvals[3,:,:])
-ax[3,1].imshow(pvals_ch2[3,:,:])
-ax[3,2].imshow(pvals_ch3[3,:,:])
-ax[4,0].imshow(pvals[4,:,:])
-ax[4,1].imshow(pvals_ch2[4,:,:])
-ax[4,2].imshow(pvals_ch3[4,:,:])
-ax[0,0].set_title(f"Bond Pvals:")
-ax[0,1].set_title(f"4 charges:")
-ax[0,2].set_title(f"6 charges:")
+ax[0,3].imshow(pvals[3,:,:])
+ax[1,3].imshow(pvals_ch2[3,:,:])
+ax[2,3].imshow(pvals_ch3[3,:,:])
+ax[0,4].imshow(pvals[4,:,:])
+ax[1,4].imshow(pvals_ch2[4,:,:])
+ax[2,4].imshow(pvals_ch3[4,:,:])
+ax[0,0].set_title(f"Ch_mod: {charges[0]}")
+ax[0,1].set_title(f"Ch_mod: {charges[1]}")
+ax[0,2].set_title(f"Ch_mod: {charges[2]}")
+ax[0,3].set_title(f"Ch_mod: {charges[3]}")
+ax[0,4].set_title(f"Ch_mod: {charges[4]}")
 
 
 
@@ -64,7 +66,7 @@ ax[0,2].set_title(f"6 charges:")
 
 # Loop over data dimensions and create text annotations.
 
-
+fig.tight_layout()
 plt.savefig("charges.png")
 plt.show()
 plt.close()
