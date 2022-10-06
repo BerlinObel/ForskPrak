@@ -170,7 +170,7 @@ for kwargs in ParameterGrid(kwarg_grid):
                 observed[np.argwhere(set(symbols[edge]) == bonds)[0][0]] += 1
 
             dubobserved = np.zeros(len(bonds))
-            for edge in all_edges:
+            for edge in all_edges_dub:
                 dubobserved[np.argwhere(set(symbolsdub[edge]) == bonds)[0][0]] += 1
 
             expected = []
@@ -189,7 +189,8 @@ for kwargs in ParameterGrid(kwarg_grid):
             print(f'a1: {a1} b1: {b1} pval: {pval}')
             print(f'a2: {a2} b2: {b2} pval2: {pval2}')
             print(f"observed: {observed} sum: {sum(observed)}")
-            print(f"dubobserved: {dubobserved} sum: {sum(dubobserved)}\n")
+            print(f"dubobserved: {dubobserved} sum: {sum(dubobserved)}")
+            print(f'ratio: {observed/dubobserved} \n')
             pval_bootstrap.append(pval)
             pval2_bootstrap.append(pval2)
 
