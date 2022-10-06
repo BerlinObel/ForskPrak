@@ -64,11 +64,11 @@ def grid_particle(elements,starting_size,n_atoms_added,n_hops,bond_score,het_sco
     # np.random.shuffle(element_list)
 
     for id in ids_ranked[:starting_size]:
-        symbol_lib[id] = element_list.pop()
+        symbol_lib[id],element_list = element_list[-1],element_list[:-1]
 
     while len(element_list) > 0:
         # choice of element added
-        rnd_symbol = element_list.pop()
+        rnd_symbol,element_list = element_list[-1],element_list[:-1]
 
         # all edges involving particle ids
         edges = edge_lib[np.isin(edge_lib[:,0],graph[:,0])]
@@ -140,9 +140,8 @@ n_each_element = {e: kwarg_grid['heanp_size'][0]/len(kwarg_grid['elements'][0]) 
 n_each_element = iteround.saferound(n_each_element, 0)
 
         # Shuffle list of surface element ids and set up 3D grid
-element_list_final = list(itertools.chain.from_iterable([[metal_idx] * int(n) for metal_idx, n in n_each_element.items()]))
-np.random.shuffle(element_list_final)
-
+que = list(itertools.chain.from_iterable([[metal_idx] * int(n) for metal_idx, n in n_each_element.items()]))
+np.random.shuffle(que)
 
 for kwargs in ParameterGrid(kwarg_grid):
 
@@ -151,8 +150,9 @@ for kwargs in ParameterGrid(kwarg_grid):
        
         for i in range(N_particles):
             
-     
-            atoms = grid_particle(kwargs['elements'],13,kwargs["heanp_size"],kwargs['n_hops'],1.0,kwargs['het_mod'],0.0,i,element_list_final)
+            elf = np.copy(que)
+
+            atoms = grid_particle(kwargs['elements'],13,kwargs["heanp_size"],kwargs['n_hops'],1.0,kwargs['het_mod'],0.0,i,elf)
             #traj = Trajectory(f'traj/{len(kwargs["elements"])}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_{str(i).zfill(4)}.traj',atoms=None, mode='w')
             #traj.write(atoms)
             ana_object = analysis.Analysis(atoms, bothways=False)
