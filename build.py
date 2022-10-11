@@ -35,7 +35,7 @@ def grid_particle(elements,starting_size,n_atoms_added,n_hops,bond_score,het_sco
 
     # make ghost particle
     surfaces = [(1, 0, 0), (1, 1, 0), (1, 1, 1)]
-    layers = [15,15,15]
+    layers = [18,18,18]
     lc = 3.8
     atoms = FaceCenteredCubic('H', surfaces, layers, latticeconstant=lc)
 
@@ -55,7 +55,7 @@ def grid_particle(elements,starting_size,n_atoms_added,n_hops,bond_score,het_sco
     ids_ranked = np.arange(len(atoms))[dist.argsort()]
 
     # establish starting graph
-    graph = edge_lib[np.all(np.isin(edge_lib[:],ids_ranked[:starting_size]),axis=1)]
+    #graph = edge_lib[np.all(np.isin(edge_lib[:],ids_ranked[:starting_size]),axis=1)]
 
     n_each_element = {e: n_atoms_added/len(elements) for e in elements}
     n_each_element = iteround.saferound(n_each_element, 0)
@@ -63,54 +63,10 @@ def grid_particle(elements,starting_size,n_atoms_added,n_hops,bond_score,het_sco
     # Shuffle list of surface element ids and set up 3D grid
     element_list = list(itertools.chain.from_iterable([[metal_idx] * int(n) for metal_idx, n in n_each_element.items()]))
     np.random.shuffle(element_list)
-    for id in ids_ranked[:starting_size]:
-        symbol_lib[id] = element_list.pop()
-
-    while len(element_list) > 0:
+    for id in ids_ranked:
         # choice of element added
-        rnd_symbol = element_list.pop()
-
-        # all edges involving particle ids
-        edges = edge_lib[np.isin(edge_lib[:,0],graph[:,0])]
-
-        # all outgoing edges from particle
-        avail_edges = edges[~np.all(np.isin(edges,graph),axis=1)]
-        #print(f"avail_edges{avail_edges}")
-        # all outgoing edges from particle
-        rnk_by_bond = Counter(avail_edges[:,1]) # rank edges by number of bonds
-
-        # candidate lists
-        candidates, cand_score= [], []
-
-        # pick random initial candidate to be added (at least three bonds required)
-        #print([id for id in rnk_by_bond.keys() if rnk_by_bond[id] > 2])
-        start_id = np.random.choice([id for id in rnk_by_bond.keys() if rnk_by_bond[id] > 2],1)
-
-        candidates.append(start_id[0])
-        cand_score.append(score(start_id,avail_edges,rnd_symbol,symbol_lib, bond_score, het_score, hom_score))
-        # print(f"cand_score: {cand_score}")
-        # hopping sequence
-        for hop in range(n_hops):
-            # available hop edges from latest candidate
-            # print(f"{}")
-            # print(hop)
-            avail_hops = avail_edges[np.isin(avail_edges[:,1],edge_lib[edge_lib[:,0] == candidates[-1]][:,1])]
-            # print(f"avail_hops: {avail_hops}")
-            if avail_hops.any():
-            # random hop to new candidate
-                rnd_hop = np.random.choice(avail_hops[:,1])
-                candidates.append(rnd_hop)
-                cand_score.append(score(rnd_hop, avail_edges, rnd_symbol, symbol_lib, bond_score, het_score, hom_score))
-            else:
-                continue
-        # pick best scoring candidate
-        best_cand = candidates[np.argmax(cand_score)]
-        # update symbol library
-        symbol_lib[best_cand] = rnd_symbol
-
-        # add chosen candidate edges to particle graph
-        graph = np.r_[graph,avail_edges[avail_edges[:, 1] == best_cand]]
-        graph = np.r_[graph,avail_edges[avail_edges[:, 1] == best_cand][:,::-1]]
+        symbol_lib[id] = element_list.pop()
+        if not bool(element_list): break
     # set symbols for the atoms object and delete ghost atoms
     atoms.set_chemical_symbols(symbol_lib)
 
@@ -151,6 +107,7 @@ for kwargs in ParameterGrid(kwarg_grid):
         pval_bootstrap = []
 
         atoms = grid_particle(kwargs['elements'],5,kwargs['heanp_size'],0,1.0,0,0.0,1)
+        view(atoms)
         #traj = Trajectory(f'traj/{len(kwargs["elements"])}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_{str(i).zfill(4)}.traj',atoms=None, mode='w')
         #traj.write(atoms)
         ana_object = analysis.Analysis(atoms, bothways=False)
