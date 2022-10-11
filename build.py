@@ -162,7 +162,7 @@ for kwargs in ParameterGrid(kwarg_grid):
 
         symbols = np.array(atoms.get_chemical_symbols())
 
-        for i in range(10000):
+        for i in range(100):
             np.random.shuffle(symbols)
             observed = np.zeros(len(bonds))
             for edge in all_edges:
@@ -199,10 +199,10 @@ for kwargs in ParameterGrid(kwarg_grid):
         #ax.vlines(np.percentile(pval_bootstrap,95),0, ax.get_ylim()[1], color='darkviolet')
         #ax.vlines(np.percentile(pval_bootstrap,99),0, ax.get_ylim()[1], color='seagreen')
         ax.set(ylim=(0, ax.get_ylim()[1] * 1.2))
-        ax2.set(ylim=(0, ax.get_ylim()[1] * 1.2))
+        ax2.set(ylim=(0, ax2.get_ylim()[1] * 1.2))
         #ax.text(0.02, 0.98,r'N$_{elements}$: '+f'{len(kwargs["elements"])}'+'\n'+r'N$_{hops}$: '+f'{kwargs["n_hops"]}'+f'\nBond modifier: {kwargs["het_mod"]:.2f}' +\
         #f'\nMedian p-value = {np.median(pval_bootstrap):.2f} '+f'\nAdded atoms: ' + f'{kwargs["heanp_size"]}', family='monospace', fontsize=13, transform=ax.transAxes,verticalalignment='top')
-        ax.text(0.02, 0.98,r'N$_{elements}$: '+f'{len(kwargs["elements"])}'+ f"\nNP size: {kwargs['heanp_size']}"+f'\nShape:{k}\n'+f'Scale:{theta}'  , family='monospace', fontsize=13, transform=ax.transAxes,verticalalignment='top')
+        ax.text(0.02, 0.98,r'N$_{elements}$: '+f'{len(kwargs["elements"])}'+ f"\nNP size: {kwargs['heanp_size']}"+f'\nShape:{k}\n'+f'Scale:{theta}'+f'\nShape: {k2}'  , family='monospace', fontsize=13, transform=ax.transAxes,verticalalignment='top')
        
         #'\nMedian p-value = {np.median(pval_bootstrap):.2f}'+f"\n95%: {np.percentile(pval_bootstrap,95,method='inverted_cdf')}"+f"\n99%: {np.percentile(pval_bootstrap,99,method='inverted_cdf')}"
         ax.set_xlabel(r"$\chi^2$", fontsize=16)
