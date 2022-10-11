@@ -155,7 +155,7 @@ for kwargs in ParameterGrid(kwarg_grid):
 
         symbols = np.array(atoms.get_chemical_symbols())
 
-        for i in range(500):
+        for i in range(10000):
             np.random.shuffle(symbols)
             observed = np.zeros(len(bonds))
             for edge in all_edges:
@@ -171,12 +171,16 @@ for kwargs in ParameterGrid(kwarg_grid):
             pval_bootstrap.append(pval)
 
         fig, ax = plt.subplots(1, 1, figsize=(8, 8))
-        ax.hist(pval_bootstrap, bins=25, range=(0, 1), histtype='bar', color='steelblue', alpha=0.7)
-        ax.hist(pval_bootstrap, bins=25, range=(0, 1), histtype='step', color='steelblue')
+        ax.hist(pval_bootstrap, bins=25, histtype='bar', color='steelblue', alpha=0.7)
+        ax.hist(pval_bootstrap, bins=25, histtype='step', color='steelblue')
         ax.vlines(np.median(pval_bootstrap), 0, ax.get_ylim()[1], color='firebrick')
+        ax.vlines(np.percentile(pval_bootstrap,95,method='inverted_cdf'),0, ax.get_ylim()[1], color='darkviolet')
+        ax.vlines(np.percentile(pval_bootstrap,99,method='inverted_cdf'),0, ax.get_ylim()[1], color='seagreen')
         ax.set(ylim=(0, ax.get_ylim()[1] * 1.2))
-        ax.text(0.02, 0.98,r'N$_{elements}$: '+f'{len(kwargs["elements"])}'+'\n'+r'N$_{hops}$: '+f'{kwargs["n_hops"]}'+f'\nBond modifier: {kwargs["het_mod"]:.2f}' +\
-        f'\nMedian p-value = {np.median(pval_bootstrap):.2f} '+f'\nAdded atoms: ' + f'{kwargs["heanp_size"]}', family='monospace', fontsize=13, transform=ax.transAxes,verticalalignment='top')
+        #ax.text(0.02, 0.98,r'N$_{elements}$: '+f'{len(kwargs["elements"])}'+'\n'+r'N$_{hops}$: '+f'{kwargs["n_hops"]}'+f'\nBond modifier: {kwargs["het_mod"]:.2f}' +\
+        #f'\nMedian p-value = {np.median(pval_bootstrap):.2f} '+f'\nAdded atoms: ' + f'{kwargs["heanp_size"]}', family='monospace', fontsize=13, transform=ax.transAxes,verticalalignment='top')
+        ax.text(0.02, 0.98,r'N$_{elements}$: '+f'{len(kwargs["elements"])}'+f"\n95%: {np.percentile(pval_bootstrap,95,method='inverted_cdf')}"+f"\n99%: {np.percentile(pval_bootstrap,99,method='inverted_cdf')}"+
+        f'\nMedian p-value = {np.median(pval_bootstrap):.2f} ', family='monospace', fontsize=13, transform=ax.transAxes,verticalalignment='top')
         ax.set_xlabel(r"Pearson's $\chi^2$ p-value", fontsize=16)
         ax.set_ylabel('Frequency', fontsize=16)
         #fig.savefig(f'pvals/{len(kwargs["elements"])}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_{kwargs["heanp_size"]}.png')
