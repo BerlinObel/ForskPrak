@@ -162,7 +162,7 @@ for kwargs in ParameterGrid(kwarg_grid):
 
         symbols = np.array(atoms.get_chemical_symbols())
 
-        for i in range(100):
+        for i in range(100000):
             np.random.shuffle(symbols)
             observed = np.zeros(len(bonds))
             for edge in all_edges:
