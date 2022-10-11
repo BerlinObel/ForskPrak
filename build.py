@@ -11,6 +11,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from scipy import stats
+from scipy import special
 import pickle
 from ase.io.trajectory import Trajectory
 import iteround, itertools
@@ -132,11 +133,17 @@ def pearsons_chi2(observed_N, expected_N):
 def chi2(observed_N, expected_N):
     return np.sum((observed_N - expected_N) ** 2 / expected_N)
     
+
+def pdf(x,shape,scale):
+    return (1/(special.gamma(shape)*scale**shape))*x**(shape-1)*np.exp(-x/scale)
+
+
 N_particles = 500
 kwarg_grid = {'elements': [sys.argv[1:]],#[elements[:i+2] for i in range(4)],
               'n_hops': range(1),
               'het_mod': [0],
               'heanp_size':[250,500,1000,2000]}
+
 
 for kwargs in ParameterGrid(kwarg_grid):
 
@@ -170,25 +177,36 @@ for kwargs in ParameterGrid(kwarg_grid):
             pval = chi2(observed, expected)
             pval_bootstrap.append(pval)
 
+
+        mean = np.mean(pval_bootstrap)
+        var = np.var(pval_bootstrap)
+        theta =  var/mean
+        k = mean/theta
+        X = np.linspace(0,30,1000)
+        Y = pdf(X,k,theta)
+
         fig, ax = plt.subplots(1, 1, figsize=(8, 8))
         ax.hist(pval_bootstrap, bins=25, histtype='bar', color='steelblue', alpha=0.7)
         ax.hist(pval_bootstrap, bins=25, histtype='step', color='steelblue')
-        ax.vlines(np.median(pval_bootstrap), 0, ax.get_ylim()[1], color='firebrick')
-        ax.vlines(np.percentile(pval_bootstrap,95),0, ax.get_ylim()[1], color='darkviolet')
-        ax.vlines(np.percentile(pval_bootstrap,99),0, ax.get_ylim()[1], color='seagreen')
+        ax2 = ax.twinx()
+        ax2.plot(X,Y,color='seagreen')
+        #ax.vlines(np.median(pval_bootstrap), 0, ax.get_ylim()[1], color='firebrick')
+        #ax.vlines(np.percentile(pval_bootstrap,95),0, ax.get_ylim()[1], color='darkviolet')
+        #ax.vlines(np.percentile(pval_bootstrap,99),0, ax.get_ylim()[1], color='seagreen')
         ax.set(ylim=(0, ax.get_ylim()[1] * 1.2))
         #ax.text(0.02, 0.98,r'N$_{elements}$: '+f'{len(kwargs["elements"])}'+'\n'+r'N$_{hops}$: '+f'{kwargs["n_hops"]}'+f'\nBond modifier: {kwargs["het_mod"]:.2f}' +\
         #f'\nMedian p-value = {np.median(pval_bootstrap):.2f} '+f'\nAdded atoms: ' + f'{kwargs["heanp_size"]}', family='monospace', fontsize=13, transform=ax.transAxes,verticalalignment='top')
-        ax.text(0.02, 0.98,r'N$_{elements}$: '+f'{len(kwargs["elements"])}'+ f'NP size: {kwargs['heanp_size']}' + f'\nMedian p-value = {np.median(pval_bootstrap):.2f}'+f"\n95%: {np.percentile(pval_bootstrap,95,method='inverted_cdf')}"+
-        f"\n99%: {np.percentile(pval_bootstrap,99,method='inverted_cdf')}", family='monospace', fontsize=13, transform=ax.transAxes,verticalalignment='top')
+        ax.text(0.02, 0.98,r'N$_{elements}$: '+f'{len(kwargs["elements"])}'+ f"\nNP size: {kwargs['heanp_size']}"+f'\nShape:{k}\n'+f'Scale:{theta}'  , family='monospace', fontsize=13, transform=ax.transAxes,verticalalignment='top')
        
-        ax.set_xlabel(r"Pearson's $\chi^2$ p-value", fontsize=16)
+        #'\nMedian p-value = {np.median(pval_bootstrap):.2f}'+f"\n95%: {np.percentile(pval_bootstrap,95,method='inverted_cdf')}"+f"\n99%: {np.percentile(pval_bootstrap,99,method='inverted_cdf')}"
+        ax.set_xlabel(r"$\chi^2$", fontsize=16)
         ax.set_ylabel('Frequency', fontsize=16)
+        ax2.set_ylabel('Probability', fontsize=16)
         #fig.savefig(f'pvals/{len(kwargs["elements"])}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_{kwargs["heanp_size"]}.png')
         fig.savefig(f'pvals/{len(kwargs["elements"])}_{kwargs["heanp_size"]}.png')
-        with open('grid.txt','a') as file:
+        #with open('grid.txt','a') as file:
             #file.write(f'{len(kwargs["elements"])},{kwargs["n_hops"]},{kwargs["het_mod"]:.2f},{np.median(pval_bootstrap):.2f},{kwargs["heanp_size"]}\n')
-            file.write(f'{len(kwargs["elements"])},{np.median(pval_bootstrap),{np.percentile(pval_bootstrap,95)},{np.percentile(pval_bootstrap,99)}:.2f}\n')
+         #   file.write(f'{len(kwargs["elements"])}:.2f}\n')
         plt.close()
 
 
