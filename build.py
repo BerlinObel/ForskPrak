@@ -182,19 +182,20 @@ for kwargs in ParameterGrid(kwarg_grid):
         var = np.var(pval_bootstrap)
         theta =  var/mean
         k = mean/theta
-        X = np.linspace(0,30,1000)
+        X = np.linspace(0,50,1000)
         Y = pdf(X,k,theta)
 
         k2 = mean/2
         Y2 = pdf(X,k2,2)
-
+        Y3 = pdf(X,7,2)
 
         fig, ax = plt.subplots(1, 1, figsize=(8, 8))
-        ax.hist(pval_bootstrap, bins=25, histtype='bar', color='steelblue', alpha=0.7)
-        ax.hist(pval_bootstrap, bins=25, histtype='step', color='steelblue')
+        ax.hist(pval_bootstrap, bins=np.arange(0,50,0.25), histtype='bar', color='steelblue', alpha=0.7)
+        ax.hist(pval_bootstrap, bins=np.arange(0,50,0.25), histtype='step', color='steelblue')
         ax2 = ax.twinx()
         ax2.plot(X,Y,color='seagreen')
-        ax2.plot(X,Y2,color='orange')
+        ax2.plot(X,Y2,'--',color='orange')
+        ax2.plot(X,Y3,color='red')
         #ax.vlines(np.median(pval_bootstrap), 0, ax.get_ylim()[1], color='firebrick')
         #ax.vlines(np.percentile(pval_bootstrap,95),0, ax.get_ylim()[1], color='darkviolet')
         #ax.vlines(np.percentile(pval_bootstrap,99),0, ax.get_ylim()[1], color='seagreen')
@@ -210,6 +211,9 @@ for kwargs in ParameterGrid(kwarg_grid):
         ax2.set_ylabel('Probability', fontsize=16)
         #fig.savefig(f'pvals/{len(kwargs["elements"])}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_{kwargs["heanp_size"]}.png')
         fig.savefig(f'pvals/{len(kwargs["elements"])}_{kwargs["heanp_size"]}.png')
+
+        np.savetxt(f"{len(kwargs['elements'])}_{kwargs['heanp_size']}",pval_bootstrap)
+
         #with open('grid.txt','a') as file:
             #file.write(f'{len(kwargs["elements"])},{kwargs["n_hops"]},{kwargs["het_mod"]:.2f},{np.median(pval_bootstrap):.2f},{kwargs["heanp_size"]}\n')
          #   file.write(f'{len(kwargs["elements"])}:.2f}\n')
