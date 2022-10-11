@@ -136,6 +136,18 @@ kwarg_grid = {'elements': [sys.argv[1:]],#[elements[:i+2] for i in range(4)],
               'heanp_size':[250]}
 
 
+
+TestObs = np.array([249,500,251])
+TestExp = np.array([250,500,250])
+
+TestObs2 = np.array([499,1001,500])
+TestExp2 = np.array([500,1000,500])
+
+
+print(pearsons_chi2(TestObs,TestExp))
+print(pearsons_chi2(TestObs2,TestExp2))
+
+"""
 for kwargs in ParameterGrid(kwarg_grid):
 
         bonds = np.array([set(a) for a in list(itertools.combinations_with_replacement(kwargs['elements'], 2))])
@@ -215,8 +227,8 @@ for kwargs in ParameterGrid(kwarg_grid):
         with open('agrid.txt','a') as file:
             file.write(f'{len(kwargs["elements"])},{kwargs["n_hops"]},{kwargs["het_mod"]:.2f},{np.median(pval_bootstrap):.2f},{np.median(pval2_bootstrap):.2f},{kwargs["heanp_size"]}\n')
         plt.close()
-
         """
+"""
         rand_frac = []
         for bond in bonds:
             sets = np.array([set(a) for a in list(itertools.product(elements,elements))])
