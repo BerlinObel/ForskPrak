@@ -150,7 +150,7 @@ for kwargs in ParameterGrid(kwarg_grid):
         bonds = np.array([set(a) for a in list(itertools.combinations_with_replacement(kwargs['elements'], 2))])
         pval_bootstrap = []
 
-        atoms = grid_particle(kwargs['elements'],13,500,0,1.0,0,0.0,1)
+        atoms = grid_particle(kwargs['elements'],5,kwargs['heanp_size'],0,1.0,0,0.0,1)
         #traj = Trajectory(f'traj/{len(kwargs["elements"])}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_{str(i).zfill(4)}.traj',atoms=None, mode='w')
         #traj.write(atoms)
         ana_object = analysis.Analysis(atoms, bothways=False)
