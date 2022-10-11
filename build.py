@@ -124,11 +124,14 @@ def chi2_uncert(observed_frac,expected_frac,uncertainties):
         return chi2, Ndof, prob_chi2
 
 def pearsons_chi2(observed_N, expected_N):
-    chi2 = np.sum((observed_N - expected_N) ** 2 / expected_N)
+    chi2 = np.sum((observed_N - expected_N) ** 2 / expected_N**2)
     Ndof = len(observed_N) - 1
     prob_chi2 = stats.chi2.sf(chi2, Ndof)
     return chi2, Ndof, prob_chi2
 
+def chi2(observed_N, expected_N):
+    return np.sum((observed_N - expected_N) ** 2 / expected_N)
+    
 N_particles = 500
 kwarg_grid = {'elements': [sys.argv[1:]],#[elements[:i+2] for i in range(4)],
               'n_hops': range(1),
@@ -163,7 +166,8 @@ for kwargs in ParameterGrid(kwarg_grid):
                 sets = np.array([set(a) for a in list(itertools.product(kwargs['elements'], kwargs['elements']))])
                 expected.append(sum(bond == sets) / len(sets) * sum(observed))
 
-            _, _, pval = pearsons_chi2(observed, expected)
+            #_, _, pval = pearsons_chi2(observed, expected)
+            pval = chi2(observed, expected)
             pval_bootstrap.append(pval)
 
         fig, ax = plt.subplots(1, 1, figsize=(8, 8))
@@ -175,9 +179,11 @@ for kwargs in ParameterGrid(kwarg_grid):
         f'\nMedian p-value = {np.median(pval_bootstrap):.2f} '+f'\nAdded atoms: ' + f'{kwargs["heanp_size"]}', family='monospace', fontsize=13, transform=ax.transAxes,verticalalignment='top')
         ax.set_xlabel(r"Pearson's $\chi^2$ p-value", fontsize=16)
         ax.set_ylabel('Frequency', fontsize=16)
-        fig.savefig(f'pvals/{len(kwargs["elements"])}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_{kwargs["heanp_size"]}.png')
+        #fig.savefig(f'pvals/{len(kwargs["elements"])}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_{kwargs["heanp_size"]}.png')
+        fig.savefig(f'pvals/{len(kwargs["elements"])}_{kwargs["heanp_size"]}.png')
         with open('grid.txt','a') as file:
-            file.write(f'{len(kwargs["elements"])},{kwargs["n_hops"]},{kwargs["het_mod"]:.2f},{np.median(pval_bootstrap):.2f},{kwargs["heanp_size"]}\n')
+            #file.write(f'{len(kwargs["elements"])},{kwargs["n_hops"]},{kwargs["het_mod"]:.2f},{np.median(pval_bootstrap):.2f},{kwargs["heanp_size"]}\n')
+            file.write(f'{len(kwargs["elements"])},{np.median(pval_bootstrap):.2f}\n')
         plt.close()
 
 
