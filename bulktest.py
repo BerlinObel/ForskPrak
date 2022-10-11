@@ -21,11 +21,11 @@ def score(id,edges,rnd_symbol,symbols,bond_score,het_score,hom_score):
     return score
 
 def build_bulk(elements):
-    layers = (7, 6, 6)
+    layers = (10, 8, 8)
     lc = 3.8
-    atoms = bulk('Au', 'fcc', lc)*(7, 6, 6)
+    atoms = bulk('Au', 'fcc', lc)*layers
 
-
+    size = 10*8*8
     # neighbor library, symbol list and possible bonds
     edge_lib = np.array(neighbor_list('ij',atoms,cutoff=lc*0.9)).transpose()
     symbol_lib = atoms.get_chemical_symbols()
@@ -38,16 +38,15 @@ def build_bulk(elements):
 
     center_id = np.argwhere(np.all(np.isclose(pos,center_coords),axis=1))[0][0]
 
-    dist = atoms.get_distances(center_id,range(len(atoms)),mic=True)
+    dist = atoms.get_distances(center_id,range(len(atoms)),mic=False)
 
     ids_ranked = np.arange(len(atoms))[dist.argsort()]
 
-    n_each_element = {e: 252/len(elements) for e in elements}
+    n_each_element = {e: size/len(elements) for e in elements}
     n_each_element = iteround.saferound(n_each_element, 0)
 
     # Shuffle list of surface element ids and set up 3D grid
     element_list = list(itertools.chain.from_iterable([[metal_idx] * int(n) for metal_idx, n in n_each_element.items()]))
-
     np.random.shuffle(element_list)
 
     for id in ids_ranked:
@@ -72,66 +71,73 @@ def bulk_test(elements):
 
     bonds = np.array([set(a) for a in list(itertools.combinations_with_replacement(elements, 2))])
     atoms = build_bulk(elements)
+    for j in range(1):
+        pbc = True
+        if j == 0:pbc=False
 
+        print((len(bonds)-1)/2)
+        atoms.pbc[:] = j
 
-    ana_object = analysis.Analysis(atoms, bothways=False)
-    all_edges = np.c_[np.array(list(ana_object.adjacency_matrix[0].keys()), dtype=np.dtype('int,int'))['f0'],
-                    np.array(list(ana_object.adjacency_matrix[0].keys()), dtype=np.dtype('int,int'))['f1']]
+        ana_object = analysis.Analysis(atoms, bothways=False)
+        all_edges = np.c_[np.array(list(ana_object.adjacency_matrix[0].keys()), dtype=np.dtype('int,int'))['f0'],
+                        np.array(list(ana_object.adjacency_matrix[0].keys()), dtype=np.dtype('int,int'))['f1']]
 
-    #remove self-to-self edges
-    all_edges = all_edges[all_edges[:, 0] != all_edges[:, 1]]
+        
+        #remove self-to-self edges
+        all_edges = all_edges[all_edges[:, 0] != all_edges[:, 1]]
 
-    #get symbol libary
-    symbols = np.array(atoms.get_chemical_symbols())
+        #get symbol libary
+        symbols = np.array(atoms.get_chemical_symbols())
+        view(atoms)
 
+        for i in range(100000):
+            np.random.shuffle(symbols)
 
-    for i in range(1000):
-        np.random.shuffle(symbols)
-        observed = np.zeros(len(bonds))
-        for edge in all_edges:
-            observed[np.argwhere(set(symbols[edge]) == bonds)[0][0]] += 1
+            observed = np.zeros(len(bonds))
+            for edge in all_edges:
+                observed[np.argwhere(set(symbols[edge]) == bonds)[0][0]] += 1
 
-        expected = []
-        for bond in bonds:
-            sets = np.array([set(a) for a in list(itertools.product(elements, elements))])
-            expected.append(sum(bond == sets) / len(sets) * sum(observed))
+            expected = []
+            for bond in bonds:
+                sets = np.array([set(a) for a in list(itertools.product(elements, elements))])
+                expected.append(sum(bond == sets) / len(sets) * sum(observed))
 
-        pval = chi2(observed, expected)
+            pval = chi2(observed, expected)
 
-        pval_bulk.append(pval)
+            pval_bulk.append(pval)
 
-    mean = np.mean(pval_bulk)
-    var = np.var(pval_bulk)
+        mean = np.mean(pval_bulk)
+        var = np.var(pval_bulk)
 
-    theta = var/mean
-    k = mean/theta
-    X = np.linspace(0,50,1000)
-    Y = pdf(X,k,theta)
+        theta = var/mean
+        k = mean/theta
+        X = np.linspace(0,50,1000)
+        Y = pdf(X,k,theta)
 
-    k2 = mean/2
-    Y2 = pdf(X,k2,2)
-    Y3 = pdf(X,7,2)
+        k2 = mean/2
+        Y2 = pdf(X,k2,2)
+        Y3 = pdf(X,7,2)
 
-    fig, ax = plt.subplots(1, 1, figsize=(8, 8))
-    ax.hist(pval_bulk, bins=np.arange(0,50,0.25), histtype='bar', color='steelblue', alpha=0.7)
-    ax.hist(pval_bulk, bins=np.arange(0,50,0.25), histtype='step', color='steelblue')
-    ax2 = ax.twinx()
-    ax2.plot(X,Y,color='seagreen')
-    ax2.plot(X,Y2,'--',color='orange')
-    ax2.plot(X,Y3,'-.',color='red')
-    ax.set(ylim=(0, ax.get_ylim()[1] * 1.2))
-    ax2.set(ylim=(0, ax2.get_ylim()[1] * 1.2))
-    ax.text(0.02, 0.98,r'N$_{elements}$: '+f'{len(elements)}'+ f"\nNP size: {252}"+f'\nShape:{k}\n'+f'Scale:{theta}'+f'\nShape: {k2}'  , family='monospace', fontsize=13, transform=ax.transAxes,verticalalignment='top')
-       
-    ax.set_xlabel(r"$\chi^2$", fontsize=16)
-    ax.set_ylabel('Frequency', fontsize=16)
-    ax2.set_ylabel('Probability', fontsize=16)
+        fig, ax = plt.subplots(1, 1, figsize=(8, 8))
+        ax.hist(pval_bulk, bins=np.arange(0,50,0.25), histtype='bar', color='steelblue', alpha=0.7)
+        ax.hist(pval_bulk, bins=np.arange(0,50,0.25), histtype='step', color='steelblue')
+        ax2 = ax.twinx()
+        ax2.plot(X,Y,color='seagreen')
+        ax2.plot(X,Y2,'--',color='orange')
+        ax2.plot(X,Y3,'-.',color='red')
+        ax.set(ylim=(0, ax.get_ylim()[1] * 1.2))
+        ax2.set(ylim=(0, ax2.get_ylim()[1] * 1.2))
+        ax.text(0.02, 0.98,r'N$_{elements}$: '+f'{len(elements)};'+ f" NP size: {640} "+ f"\nPeridocity:{pbc}"+f'\nShape:{k}\n'+f'Scale:{theta}'+f'\nShape: {k2}'  , family='monospace', fontsize=13, transform=ax.transAxes,verticalalignment='top')
+        
+        ax.set_xlabel(r"$\chi^2$", fontsize=16)
+        ax.set_ylabel('Frequency', fontsize=16)
+        ax2.set_ylabel('Probability', fontsize=16)
 
-    fig.savefig(f'pvals/bulk_{len(elements)}_{252}.png')
+        fig.savefig(f'pvals/bulk_{len(elements)}_{640}_{pbc}.png')
 
-    np.savetxt(f"bulk_{len(elements)}_{252}",pval_bulk)
+        np.savetxt(f"bulk_{len(elements)}_{640}_{pbc}",pval_bulk)
 
-    plt.close()
+        plt.close()
 
 
 bulk_test(sys.argv[1:])
