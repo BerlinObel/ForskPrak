@@ -195,7 +195,7 @@ for kwargs in ParameterGrid(kwarg_grid):
         ax2 = ax.twinx()
         ax2.plot(X,Y,color='seagreen')
         ax2.plot(X,Y2,'--',color='orange')
-        ax2.plot(X,Y3,color='red')
+        ax2.plot(X,Y3,'-.',color='red')
         #ax.vlines(np.median(pval_bootstrap), 0, ax.get_ylim()[1], color='firebrick')
         #ax.vlines(np.percentile(pval_bootstrap,95),0, ax.get_ylim()[1], color='darkviolet')
         #ax.vlines(np.percentile(pval_bootstrap,99),0, ax.get_ylim()[1], color='seagreen')
