@@ -152,7 +152,8 @@ for kwargs in ParameterGrid(kwarg_grid):
             pval = chi2_square(observed, expected)
             pval_bootstrap.append(pval)
         """
-        for i in range(100):
+        for i in range(100000):
+            np.random.shuffle(symbols)
             observed = np.zeros((2,len(bonds)))
             for edge in all_edges:
                 if int(n_bonds[edge[0]]) == 12:
@@ -162,6 +163,7 @@ for kwargs in ParameterGrid(kwarg_grid):
 
             bulk_chi.append(chi2(observed[0],np.array(expected)))
             outer_chi.append(chi2(observed[1],np.array(expected)))
+            
             
         """
         mean_bulk = np.mean(bulk_chi)
@@ -178,10 +180,10 @@ for kwargs in ParameterGrid(kwarg_grid):
         """
 
         fig, ax = plt.subplots(1, 2, figsize=(8, 8))
-        ax[0].hist(bulk_chi, bins=10, histtype='bar', color='steelblue', alpha=0.7)
-        ax[0].hist(bulk_chi, bins=10, histtype='step', color='steelblue')
-        ax[1].hist(outer_chi, bins=10, histtype='bar', color='steelblue', alpha=0.7)
-        ax[1].hist(outer_chi, bins=10, histtype='step', color='steelblue')
+        ax[0].hist(bulk_chi, bins=200, histtype='bar', color='steelblue', alpha=0.7)
+        ax[0].hist(bulk_chi, bins=200, histtype='step', color='steelblue')
+        ax[1].hist(outer_chi, bins=200, histtype='bar', color='steelblue', alpha=0.7)
+        ax[1].hist(outer_chi, bins=200, histtype='step', color='steelblue')
         #ax2 = ax.twinx()
         #ax2.plot(X,Y,color='seagreen')
         #ax2.plot(X,Y2,'--',color='orange')
