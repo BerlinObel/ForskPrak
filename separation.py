@@ -90,14 +90,12 @@ def chi2_square(observed_N, expected_N):
     return np.sum((observed_N - expected_N) ** 2 / expected_N)
 
 def chi2(observed_N, expected_N):
-
-    expected_N *= int(sum(observed_N))
-    bulk_atom = int(sum(expected_N))==12
+    expected_N *= sum(observed_N)
     a = (observed_N - expected_N)
     b = np.sqrt(expected_N)
     c = np.divide(a, b, out=np.zeros_like(a), where=b!=0)
     chi = np.sum(c)
-    return chi, bulk_atom
+    return chi
     
 
 def pdf(x,shape,scale):
@@ -133,6 +131,9 @@ for kwargs in ParameterGrid(kwarg_grid):
 
         symbols = np.array(atoms.get_chemical_symbols())
 
+        n_bonds = np.zeros(len(symbols))
+        for edges in all_edges:
+            n_bonds[edges[0]] += 1 
 
         expected = []
         for bond in bonds:
@@ -151,18 +152,17 @@ for kwargs in ParameterGrid(kwarg_grid):
             pval = chi2_square(observed, expected)
             pval_bootstrap.append(pval)
         """
-        for i in range(100000):
-            observed = np.zeros((len(symbols),len(bonds)))
+        for i in range(100):
+            observed = np.zeros((2,len(bonds)))
             for edge in all_edges:
-                observed[edge[0],np.argwhere(set(symbols[edge]) == bonds)[0][0]] += 1  
+                if int(n_bonds[edge[0]]) == 12:
+                    observed[0,np.argwhere(set(symbols[edge]) == bonds)[0][0]] += 1  
+                else: 
+                    observed[1,np.argwhere(set(symbols[edge]) == bonds)[0][0]] += 1  
 
-            for n in observed:
-                chi, bulk = chi2(n,np.array(expected))
-                if bulk: bulk_chi.append(chi)
-                else: outer_chi.append(chi)
-
+            bulk_chi.append(chi2(observed[0],np.array(expected)))
+            outer_chi.append(chi2(observed[1],np.array(expected)))
             
-
         """
         mean_bulk = np.mean(bulk_chi)
         mean_outer = np.mean(bulk_chi)
@@ -178,10 +178,10 @@ for kwargs in ParameterGrid(kwarg_grid):
         """
 
         fig, ax = plt.subplots(1, 2, figsize=(8, 8))
-        ax[0].hist(bulk_chi, bins=200, histtype='bar', color='steelblue', alpha=0.7)
-        ax[0].hist(bulk_chi, bins=200, histtype='step', color='steelblue')
-        ax[1].hist(outer_chi, bins=200, histtype='bar', color='steelblue', alpha=0.7)
-        ax[1].hist(outer_chi, bins=200, histtype='step', color='steelblue')
+        ax[0].hist(bulk_chi, bins=10, histtype='bar', color='steelblue', alpha=0.7)
+        ax[0].hist(bulk_chi, bins=10, histtype='step', color='steelblue')
+        ax[1].hist(outer_chi, bins=10, histtype='bar', color='steelblue', alpha=0.7)
+        ax[1].hist(outer_chi, bins=10, histtype='step', color='steelblue')
         #ax2 = ax.twinx()
         #ax2.plot(X,Y,color='seagreen')
         #ax2.plot(X,Y2,'--',color='orange')
