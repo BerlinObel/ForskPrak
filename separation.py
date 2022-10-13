@@ -166,7 +166,7 @@ for kwargs in ParameterGrid(kwarg_grid):
             pval = chi2_square(observed, expected)
             pval_bootstrap.append(pval)
         """
-        for i in range(100):
+        for i in range(100000):
             np.random.shuffle(symbols)
             outer_atoms = 0
             observed = np.zeros((2,len(bonds)))
