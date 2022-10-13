@@ -17,6 +17,7 @@ from ase.io.trajectory import Trajectory
 import iteround, itertools
 from sklearn.model_selection import ParameterGrid
 import sys
+from os import path
 
 def score(id,edges,rnd_symbol,symbols,bond_score,het_score,hom_score):
     score = 0
@@ -96,7 +97,14 @@ def chi2(observed_N, expected_N):
     c = np.divide(a, b, out=np.zeros_like(a), where=b!=0)
     chi = np.sum(c)
     return chi
-    
+
+def chi22(observed_N, expected_N, oa):
+    expected_N *= (12*oa)
+    a = (observed_N - expected_N)
+    b = np.sqrt(expected_N)
+    c = np.divide(a, b, out=np.zeros_like(a), where=b!=0)
+    chi = np.sum(c)
+    return chi 
 
 def pdf(x,shape,scale):
     return (1/(special.gamma(shape)*scale**shape))*x**(shape-1)*np.exp(-x/scale)
@@ -117,23 +125,29 @@ for kwargs in ParameterGrid(kwarg_grid):
 
         bulk_chi = []
         outer_chi = []
+        alt_outer = []
+        if not path.isfile(f'chi_{len(kwargs["elements"])}_{kwargs["heanp_size"]}_edges.npy'):
+            atoms = grid_particle(kwargs['elements'],5,kwargs['heanp_size'],0,1.0,0,0.0,1)
+            view(atoms)
+            #traj = Trajectory(f'traj/{len(kwargs["elements"])}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_{str(i).zfill(4)}.traj',atoms=None, mode='w')
+            #traj.write(atoms)
+            ana_object = analysis.Analysis(atoms, bothways=True)
+            all_edges = np.c_[np.array(list(ana_object.adjacency_matrix[0].keys()), dtype=np.dtype('int,int'))['f0'],
+                                np.array(list(ana_object.adjacency_matrix[0].keys()), dtype=np.dtype('int,int'))['f1']]
 
-        atoms = grid_particle(kwargs['elements'],5,kwargs['heanp_size'],0,1.0,0,0.0,1)
-        view(atoms)
-        #traj = Trajectory(f'traj/{len(kwargs["elements"])}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_{str(i).zfill(4)}.traj',atoms=None, mode='w')
-        #traj.write(atoms)
-        ana_object = analysis.Analysis(atoms, bothways=True)
-        all_edges = np.c_[np.array(list(ana_object.adjacency_matrix[0].keys()), dtype=np.dtype('int,int'))['f0'],
-                              np.array(list(ana_object.adjacency_matrix[0].keys()), dtype=np.dtype('int,int'))['f1']]
-
-        #remove self-to-self edges
-        all_edges = all_edges[all_edges[:, 0] != all_edges[:, 1]]
-
-        symbols = np.array(atoms.get_chemical_symbols())
-
+            #remove self-to-self edges
+            all_edges = all_edges[all_edges[:, 0] != all_edges[:, 1]]
+            np.save(f'chi_{len(kwargs["elements"])}_{kwargs["heanp_size"]}_edges',all_edges)
+            symbols = np.array(atoms.get_chemical_symbols())
+            np.save(f'chi_{len(kwargs["elements"])}_{kwargs["heanp_size"]}_symbols',symbols)
+        else:
+            all_edges = np.load(f'chi_{len(kwargs["elements"])}_{kwargs["heanp_size"]}_edges.npy')
+            symbols = np.load(f'chi_{len(kwargs["elements"])}_{kwargs["heanp_size"]}_symbols.npy')
+        
         n_bonds = np.zeros(len(symbols))
         for edges in all_edges:
             n_bonds[edges[0]] += 1 
+        
 
         expected = []
         for bond in bonds:
@@ -153,15 +167,19 @@ for kwargs in ParameterGrid(kwarg_grid):
             pval_bootstrap.append(pval)
         """
         for i in range(100):
+            np.random.shuffle(symbols)
+            outer_atoms = 0
             observed = np.zeros((2,len(bonds)))
             for edge in all_edges:
                 if int(n_bonds[edge[0]]) == 12:
                     observed[0,np.argwhere(set(symbols[edge]) == bonds)[0][0]] += 1  
                 else: 
                     observed[1,np.argwhere(set(symbols[edge]) == bonds)[0][0]] += 1  
+                    outer_atoms += 1
 
             bulk_chi.append(chi2(observed[0],np.array(expected)))
             outer_chi.append(chi2(observed[1],np.array(expected)))
+            alt_outer.append(chi22(observed[1],np.array(expected),outer_atoms))
             
         """
         mean_bulk = np.mean(bulk_chi)
@@ -177,11 +195,13 @@ for kwargs in ParameterGrid(kwarg_grid):
         Y3 = pdf(X,7,2)
         """
 
-        fig, ax = plt.subplots(1, 2, figsize=(8, 8))
+        fig, ax = plt.subplots(1, 3, figsize=(8, 16))
         ax[0].hist(bulk_chi, bins=10, histtype='bar', color='steelblue', alpha=0.7)
         ax[0].hist(bulk_chi, bins=10, histtype='step', color='steelblue')
         ax[1].hist(outer_chi, bins=10, histtype='bar', color='steelblue', alpha=0.7)
         ax[1].hist(outer_chi, bins=10, histtype='step', color='steelblue')
+        ax[2].hist(outer_chi, bins=10, histtype='bar', color='steelblue', alpha=0.7)
+        ax[2].hist(outer_chi, bins=10, histtype='step', color='steelblue')
         #ax2 = ax.twinx()
         #ax2.plot(X,Y,color='seagreen')
         #ax2.plot(X,Y2,'--',color='orange')
@@ -191,6 +211,7 @@ for kwargs in ParameterGrid(kwarg_grid):
         #ax.vlines(np.percentile(pval_bootstrap,99),0, ax.get_ylim()[1], color='seagreen')
         ax[0].set(ylim=(0, ax[0].get_ylim()[1] * 1.2))
         ax[1].set(ylim=(0, ax[1].get_ylim()[1] * 1.2))
+        ax[2].set(ylim=(0, ax[1].get_ylim()[1] * 1.2))
         #ax2.set(ylim=(0, ax2.get_ylim()[1] * 1.2))
         #ax.text(0.02, 0.98,r'N$_{elements}$: '+f'{len(kwargs["elements"])}'+'\n'+r'N$_{hops}$: '+f'{kwargs["n_hops"]}'+f'\nBond modifier: {kwargs["het_mod"]:.2f}' +\
         #f'\nMedian p-value = {np.median(pval_bootstrap):.2f} '+f'\nAdded atoms: ' + f'{kwargs["heanp_size"]}', family='monospace', fontsize=13, transform=ax.transAxes,verticalalignment='top')
@@ -199,6 +220,7 @@ for kwargs in ParameterGrid(kwarg_grid):
         #'\nMedian p-value = {np.median(pval_bootstrap):.2f}'+f"\n95%: {np.percentile(pval_bootstrap,95,method='inverted_cdf')}"+f"\n99%: {np.percentile(pval_bootstrap,99,method='inverted_cdf')}"
         ax[0].set_xlabel(r"$\chi$" + " bulk", fontsize=16)
         ax[1].set_xlabel(r"$\chi$" + " outer", fontsize=16)
+        ax[2].set_xlabel(r"$\chi$" + " outer alt", fontsize=16)
         ax[0].set_ylabel('Frequency', fontsize=16)
         #ax2.set_ylabel('Probability', fontsize=16)
         #fig.savefig(f'pvals/{len(kwargs["elements"])}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_{kwargs["heanp_size"]}.png')
@@ -206,6 +228,7 @@ for kwargs in ParameterGrid(kwarg_grid):
         fig.savefig(f'chi_{len(kwargs["elements"])}_{kwargs["heanp_size"]}')
         np.savetxt(f'chi_{len(kwargs["elements"])}_{kwargs["heanp_size"]}_bulk',bulk_chi)
         np.savetxt(f'chi_{len(kwargs["elements"])}_{kwargs["heanp_size"]}_outer',outer_chi)
+        np.savetxt(f'chi_{len(kwargs["elements"])}_{kwargs["heanp_size"]}_alt',alt_outer)
 
 
         #with open('grid.txt','a') as file:
