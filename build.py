@@ -93,6 +93,21 @@ def chi2(observed_N, expected_N):
 def pdf(x,shape,scale):
     return (1/(special.gamma(shape)*scale**shape))*x**(shape-1)*np.exp(-x/scale)
 
+def chi2(observed_N, expected_N):
+    expected_N *= sum(observed_N)
+    a = (observed_N - expected_N)
+    b = np.sqrt(expected_N)
+    c = np.divide(a, b, out=np.zeros_like(a), where=b!=0)
+    chi = np.sum(c)
+    return chi
+
+def chi22(observed_N, expected_N, oa):
+    expected_N *= (12*oa)
+    a = (observed_N - expected_N)
+    b = np.sqrt(expected_N)
+    c = np.divide(a, b, out=np.zeros_like(a), where=b!=0)
+    chi = np.sum(c)
+    return chi 
 
 N_particles = 500
 kwarg_grid = {'elements': [sys.argv[1:]],#[elements[:i+2] for i in range(4)],

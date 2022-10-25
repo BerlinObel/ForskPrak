@@ -4,7 +4,6 @@ from ase.visualize import view
 from ase.neighborlist import neighbor_list
 from time import time
 from ase.cluster.cubic import FaceCenteredCubic
-import itertools
 from collections import Counter
 from ase.geometry import analysis
 import matplotlib
