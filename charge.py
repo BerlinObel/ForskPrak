@@ -78,7 +78,8 @@ def grid_particle(elements,starting_size,n_atoms_added,n_hops,bond_score,het_sco
         if symbol_lib[id] != 'H': continue
         symbol_lib[id] = positive_element_list.pop()
         edges = edge_lib[np.argwhere(edge_lib[:,0] == id)]
-        symbol_lib[edges[0,0,1]] = negative_element_list.pop()
+        edge_id = np.random.choice(edges[:,0,1])
+        symbol_lib[edge_id] = negative_element_list.pop()
 
         if not bool(positive_element_list): break
     
@@ -154,7 +155,7 @@ def chi22(observed_N, expected_N, oa):
 
 N_particles = 500
 kwarg_grid = {'elements': [sys.argv[1:]],#[elements[:i+2] for i in range(4)],
-              'n_hops': range(3),
+              'n_hops': range(7),
               'het_mod': [-0.5],
               'heanp_size':[500]}
 
@@ -163,7 +164,7 @@ for kwargs in ParameterGrid(kwarg_grid):
         bonds = np.array([set(a) for a in list(itertools.combinations_with_replacement(kwargs['elements'], 2))])
         pval_bootstrap = []
         for i in range(N_particles):
-            
+            if i%100 == 0: print(i/5)
 
             atoms = grid_particle(kwargs['elements'],5,kwargs['heanp_size'],kwargs["n_hops"],1.0,kwargs["het_mod"],1.0,i)
             #view(atoms)
@@ -192,25 +193,40 @@ for kwargs in ParameterGrid(kwarg_grid):
             pval = chi2(observed, expected)
             pval_bootstrap.append(pval)
 
-        """
-        mean = np.mean(pval_bootstrap)
-        var = np.var(pval_bootstrap)
+        np.save(f'charge/{len(kwargs["elements"])}_{kwargs["heanp_size"]}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}',pval_bootstrap)
+        testpvals = np.load(f"charge/chargepvals_{len(kwargs['elements'])}_{kwargs['heanp_size']}")
+
+        med = np.median(pval_bootstrap)
+        mean = np.mean(testpvals)
+        var = np.var(testpvals)
         theta =  var/mean
         k = mean/theta
         X = np.linspace(0,50,1000)
         Y = pdf(X,k,theta)
+        CDF = special.gammainc(k,med/theta)
 
-        k2 = mean/2
-        Y2 = pdf(X,k2,2)
-        Y3 = pdf(X,7,2)
 
+        fig, ax = plt.subplots(1, 1, figsize=(8, 8))
+        ax.hist(pval_bootstrap, bins=np.arange(0,50,0.01), histtype='bar', color='steelblue', alpha=0.7)
+        ax.hist(pval_bootstrap, bins=np.arange(0,50,0.01), histtype='step', color='steelblue')
+        ax.vlines(np.median(pval_bootstrap), 0, ax.get_ylim()[1], color='firebrick')
+        ax2 = ax.twinx()
+        ax2.plot(X,Y,color='seagreen')
+        ax.set(ylim=(0, ax.get_ylim()[1] * 1.2))
+        ax2.set(ylim=(0, ax2.get_ylim()[1] * 1.2))
+        ax.text(0.02, 0.98,r'N$_{elements}$: '+f'{len(kwargs["elements"])}'+'\n'+r'N$_{hops}$: '+f'{kwargs["n_hops"]}'+f'\nBond modifier: {kwargs["het_mod"]:.2f}' +\
+        f'\nMedian p-value = {np.median(pval_bootstrap):.2f} '+'\nCDF = {CDF:.2f}'+ f'\nAdded atoms: ' + f'{kwargs["heanp_size"]}', family='monospace', fontsize=13, transform=ax.transAxes,verticalalignment='top')
+        fig.savefig(f'charge/{len(kwargs["elements"])}_{kwargs["heanp_size"]}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}.png')
+        plt.close()
+
+        """
         fig, ax = plt.subplots(1, 1, figsize=(8, 8))
         ax.hist(pval_bootstrap, bins=np.arange(0,50,0.25), histtype='bar', color='steelblue', alpha=0.7)
         ax.hist(pval_bootstrap, bins=np.arange(0,50,0.25), histtype='step', color='steelblue')
         ax2 = ax.twinx()
         ax2.plot(X,Y,color='seagreen')
         ax2.plot(X,Y2,'--',color='orange')
-        ax2.plot(X,Y3,'-.',color='red')
+        ax2.plot(X,Y3,'-.',color='red') 
         #ax.vlines(np.median(pval_bootstrap), 0, ax.get_ylim()[1], color='firebrick')
         #ax.vlines(np.percentile(pval_bootstrap,95),0, ax.get_ylim()[1], color='darkviolet')
         #ax.vlines(np.percentile(pval_bootstrap,99),0, ax.get_ylim()[1], color='seagreen')
