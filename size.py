@@ -155,42 +155,35 @@ for kwargs in ParameterGrid(kwarg_grid):
         pval_bootstrap = []
         obs_data = []
 
-        if not path.isfile(f'size/chi_{len(kwargs["elements"])}_{kwargs["heanp_size"]}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_edges.npy'):
-            atoms = grid_particle(kwargs['elements'],5,kwargs['heanp_size'],0,1.0,0,0.0,1)
-            view(atoms)
+        for i in range(N_particles):
+            if i%100 == 0: print(i/5)
+
+            atoms = grid_particle(kwargs['elements'],5,kwargs['heanp_size'],kwargs["n_hops"],1.0,kwargs["het_mod"],1.0,i)
+            #view(atoms)
             #traj = Trajectory(f'traj/{len(kwargs["elements"])}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_{str(i).zfill(4)}.traj',atoms=None, mode='w')
             #traj.write(atoms)
-            ana_object = analysis.Analysis(atoms, bothways=True)
+            ana_object = analysis.Analysis(atoms, bothways=False)
             all_edges = np.c_[np.array(list(ana_object.adjacency_matrix[0].keys()), dtype=np.dtype('int,int'))['f0'],
                                 np.array(list(ana_object.adjacency_matrix[0].keys()), dtype=np.dtype('int,int'))['f1']]
 
             #remove self-to-self edges
             all_edges = all_edges[all_edges[:, 0] != all_edges[:, 1]]
-            np.save(f'chi_{len(kwargs["elements"])}_{kwargs["heanp_size"]}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_edges',all_edges)
-            symbols = np.array(atoms.get_chemical_symbols())
-            np.save(f'chi_{len(kwargs["elements"])}_{kwargs["heanp_size"]}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_symbols',symbols)
-        else:
-            all_edges = np.load(f'size/chi_{len(kwargs["elements"])}_{kwargs["heanp_size"]}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_edges.npy')
-            symbols = np.load(f'size/chi_{len(kwargs["elements"])}_{kwargs["heanp_size"]}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_symbols.npy')
-        
-        n_bonds = np.zeros(len(symbols))
-        for edges in all_edges:
-            n_bonds[edges[0]] += 1 
-        
 
-        expected = []
-        for bond in bonds:
-            sets = np.array([set(a) for a in list(itertools.product(kwargs['elements'], kwargs['elements']))])
-            expected.append(sum(bond == sets) / len(sets))
-        
-    
-        for i in range(50000):
-            np.random.shuffle(symbols)
+            symbols = np.array(atoms.get_chemical_symbols())
+            
+            
             observed = np.zeros(len(bonds))
             for edge in all_edges:
-                observed[np.argwhere(set(symbols[edge]) == bonds)[0][0]] += 1  
+                observed[np.argwhere(set(symbols[edge]) == bonds)[0][0]] += 1
 
-            pval_bootstrap.append(chi2(observed,np.array(expected)))
+            expected = []
+            for bond in bonds:
+                sets = np.array([set(a) for a in list(itertools.product(kwargs['elements'], kwargs['elements']))])
+                expected.append(sum(bond == sets) / len(sets) * sum(observed))
+
+            #_, _, pval = pearsons_chi2(observed, expected)
+            pval = chi2(observed, np.array(expected))
+            pval_bootstrap.append(pval)
             obs_data.append(observed)
         
         
