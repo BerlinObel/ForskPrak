@@ -73,10 +73,10 @@ def bulk_test(elements):
     atoms = build_bulk(elements)
     for j in range(1):
         pbc = True
-        if j == 0:pbc=False
+        
 
         print((len(bonds)-1)/2)
-        atoms.pbc[:] = j
+        atoms.pbc[:] = 1
 
         ana_object = analysis.Analysis(atoms, bothways=False)
         all_edges = np.c_[np.array(list(ana_object.adjacency_matrix[0].keys()), dtype=np.dtype('int,int'))['f0'],
