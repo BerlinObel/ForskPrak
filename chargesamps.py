@@ -72,7 +72,6 @@ def grid_particle(elements,starting_size,n_atoms_added,n_hops,bond_score,het_sco
         symbol_lib[id] = element_list.pop()
         edges = edge_lib[np.argwhere(edge_lib[:,0] == id)]
         edge_id = np.random.choice(edges[:,0,1])
-        print(edges[:,0,1])
         symbol_lib[edge_id] = element_list.pop()
 
         if not bool(element_list): break
