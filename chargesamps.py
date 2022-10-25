@@ -112,7 +112,7 @@ def chi22(observed_N, expected_N, oa):
     chi = np.sum(c)
     return chi 
 
-N_particles = 10
+N_particles = 100000
 kwarg_grid = {'elements': [sys.argv[1:]],#[elements[:i+2] for i in range(4)],,
               'heanp_size':[250,500,1000,2000]}
 
@@ -124,7 +124,7 @@ for kwargs in ParameterGrid(kwarg_grid):
         print("hello")
         for i in range(N_particles):
             atoms = grid_particle(kwargs['elements'],5,kwargs['heanp_size'],0,1.0,0,1.0,i)
-            view(atoms)
+            #view(atoms)
             #traj = Trajectory(f'traj/{len(kwargs["elements"])}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_{str(i).zfill(4)}.traj',atoms=None, mode='w')
             #traj.write(atoms)
             ana_object = analysis.Analysis(atoms, bothways=False)
