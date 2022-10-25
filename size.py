@@ -99,6 +99,9 @@ def grid_particle(elements,starting_size,n_atoms_added,n_hops,bond_score,het_sco
     # set symbols for the atoms object and delete ghost atoms
     atoms.set_chemical_symbols(symbol_lib)
 
+    # set symbols for the atoms object and delete ghost atoms
+    atoms.set_chemical_symbols(symbol_lib)
+
     del atoms[[atom.index for atom in atoms if atom.symbol=='H']]
 
     return atoms
@@ -135,13 +138,13 @@ def chi_oa(observed_N, expected_N, oa):
     return chi 
 
 def pdf(x,shape,scale):
-    return (1/(special.gamma(shape)*scale**shape))*((x**(shape-1))*(np.exp(-x/scale)))
+    return (1/(special.gamma(shape)*scale**shape))*x**(shape-1)*np.exp(-x/scale)
 
 
 N_particles = 500
 kwarg_grid = {'elements': [sys.argv[1:]],#[elements[:i+2] for i in range(4)],
-              'n_hops': [0],
-              'het_mod': [0],
+              'n_hops': range(7),
+              'het_mod': np.linspace(-0.75,0.75,7),
               'heanp_size':[250,500,1000,2000]}
 
 
@@ -152,23 +155,23 @@ for kwargs in ParameterGrid(kwarg_grid):
         pval_bootstrap = []
         obs_data = []
 
-        if not path.isfile(f'size/chi_{len(kwargs["elements"])}_{kwargs["heanp_size"]}_edges.npy'):
+        if not path.isfile(f'size/chi_{len(kwargs["elements"])}_{kwargs["heanp_size"]}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_edges.npy'):
             atoms = grid_particle(kwargs['elements'],5,kwargs['heanp_size'],0,1.0,0,0.0,1)
             view(atoms)
             #traj = Trajectory(f'traj/{len(kwargs["elements"])}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_{str(i).zfill(4)}.traj',atoms=None, mode='w')
             #traj.write(atoms)
-            ana_object = analysis.Analysis(atoms, bothways=False)
+            ana_object = analysis.Analysis(atoms, bothways=True)
             all_edges = np.c_[np.array(list(ana_object.adjacency_matrix[0].keys()), dtype=np.dtype('int,int'))['f0'],
                                 np.array(list(ana_object.adjacency_matrix[0].keys()), dtype=np.dtype('int,int'))['f1']]
 
             #remove self-to-self edges
             all_edges = all_edges[all_edges[:, 0] != all_edges[:, 1]]
-            np.save(f'size/chi_{len(kwargs["elements"])}_{kwargs["heanp_size"]}_edges',all_edges)
+            np.save(f'chi_{len(kwargs["elements"])}_{kwargs["heanp_size"]}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_edges',all_edges)
             symbols = np.array(atoms.get_chemical_symbols())
-            np.save(f'size/chi_{len(kwargs["elements"])}_{kwargs["heanp_size"]}_symbols',symbols)
+            np.save(f'chi_{len(kwargs["elements"])}_{kwargs["heanp_size"]}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_symbols',symbols)
         else:
-            all_edges = np.load(f'size/chi_{len(kwargs["elements"])}_{kwargs["heanp_size"]}_edges.npy')
-            symbols = np.load(f'size/chi_{len(kwargs["elements"])}_{kwargs["heanp_size"]}_symbols.npy')
+            all_edges = np.load(f'size/chi_{len(kwargs["elements"])}_{kwargs["heanp_size"]}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_edges.npy')
+            symbols = np.load(f'size/chi_{len(kwargs["elements"])}_{kwargs["heanp_size"]}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_symbols.npy')
         
         n_bonds = np.zeros(len(symbols))
         for edges in all_edges:
@@ -191,30 +194,39 @@ for kwargs in ParameterGrid(kwarg_grid):
             obs_data.append(observed)
         
         
-        np.save(f"size/sizepvals_{len(kwargs['elements'])}_{kwargs['heanp_size']}",pval_bootstrap)
-        np.save(f"size/sizeobs_{len(kwargs['elements'])}_{kwargs['heanp_size']}",obs_data)
-
-        mean = np.mean(pval_bootstrap)
-        var = np.var(pval_bootstrap)
-        theta = var/mean
+        np.save(f'size/{len(kwargs["elements"])}_{kwargs["heanp_size"]}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}',pval_bootstrap)
+        testpvals = np.load(f"size/sizepvals_{len(kwargs['elements'])}_{kwargs['heanp_size']}.npy")
+        nohopspvals = np.load(f'size/{len(kwargs["elements"])}_{kwargs["heanp_size"]}_0_{kwargs["het_mod"]:.2f}.npy')
+        med = np.median(pval_bootstrap)
+        mean = np.mean(testpvals)
+        var = np.var(testpvals)
+        theta =  var/mean
         k = mean/theta
         X = np.linspace(0,np.max(pval_bootstrap),1000)
         Y = pdf(X,k,theta)
+        CDF = special.gammainc(k,(med/theta))
+        
+        m0 = np.mean(nohopspvals)
+        v0 = np.var(nohopspvals)
+        t0 = v0/m0
+        k0 = m0/t0
+        Y0 = pdf(X,k0,t0)
+        CDF0 = special.gammainc(k0,(med/t0))
 
         fig, ax = plt.subplots(1, 1, figsize=(8, 8))
-        ax.hist(pval_bootstrap, bins=5000, histtype='bar', color='steelblue', alpha=0.7)
-        ax.hist(pval_bootstrap, bins=5000, histtype='step', color='steelblue')
+        ax.hist(pval_bootstrap, bins=100, histtype='bar', color='steelblue', alpha=0.7)
+        ax.hist(pval_bootstrap, bins=100, histtype='step', color='steelblue')
+        ax.vlines(np.median(pval_bootstrap), 0, ax.get_ylim()[1], color='firebrick')
         ax2 = ax.twinx()
         ax2.plot(X,Y,color='seagreen')
-        fig.savefig(f'size/size_{len(kwargs["elements"])}_{kwargs["heanp_size"]}.png')
-        plt.close()
-
-
-
-        #with open('grid.txt','a') as file:
-            #file.write(f'{len(kwargs["elements"])},{kwargs["n_hops"]},{kwargs["het_mod"]:.2f},{np.median(pval_bootstrap):.2f},{kwargs["heanp_size"]}\n')
-         #   file.write(f'{len(kwargs["elements"])}:.2f}\n')
-
+        ax2.plot(X,Y0,'r--')
+        ax.set(ylim=(0, ax.get_ylim()[1] * 1.2))
+        ax2.set(ylim=(0, ax2.get_ylim()[1] * 1.2))
+        ax.text(0.02, 0.98,r'N$_{elements}$: '+f'{len(kwargs["elements"])}'+'\n'+r'N$_{hops}$: '+f'{kwargs["n_hops"]}'+f'\nBond modifier: {kwargs["het_mod"]:.2f}' +\
+        r'\nMedian $\chi^2$ ='+f' {np.median(pval_bootstrap):.2f} '+f'\nCDF = {CDF:.2f}'+f'\nCDF_charge = {CDF0:.2f}'+ f'\nAdded atoms: ' + f'{kwargs["heanp_size"]}', family='monospace', fontsize=13, transform=ax.transAxes,verticalalignment='top')
+        ax.set_xlabel(r"$\chi^2$", fontsize=16)
+        ax.set_ylabel('Frequency', fontsize=16)
+        fig.savefig(f'size/{len(kwargs["elements"])}_{kwargs["heanp_size"]}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}.png')
         plt.close()
 
 
