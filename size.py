@@ -21,14 +21,17 @@ from os import path
 
 def score(id,edges,rnd_symbol,symbols,bond_score,het_score,hom_score):
     score = 0
-    for edge in edges[np.isin(edges[:,1],id)]:
+    edges = edges[:,:,1]
+    for edge in edges:
+        edge_symbol = symbols[edge[0]]
+        if edge_symbol =='H': continue
         score += bond_score
-        if rnd_symbol != symbols[edge[0]]:
+        if rnd_symbol != edge_symbol:
             score += het_score
-        elif rnd_symbol == symbols[edge[0]]:
+        elif rnd_symbol == edge_symbol:
             score += hom_score
     return score
-
+    
 def grid_particle(elements,starting_size,n_atoms_added,n_hops,bond_score,het_score,hom_score,rnd_seed):
 
     # set random seed
@@ -74,13 +77,15 @@ def grid_particle(elements,starting_size,n_atoms_added,n_hops,bond_score,het_sco
             rnd_symbol = symbol_lib[id]
             if symbol_lib[id] != 'H':
                 edges = edge_lib[np.argwhere(edge_lib[:,0] == id)]
+                print(edges)
                 candidates, cand_score= [], []
                 candidates.append(id)
                 cand_score.append(score(id,edges,rnd_symbol,symbol_lib, bond_score, het_score, hom_score))
 
 
                 avail_hops = edges[:,:,1].T[0]
-                    #print(f"avail_hops: {avail_hops}")
+                print(avail_hops)
+                #print(f"avail_hops: {avail_hops}")
                 if avail_hops.any():
                     for hops in avail_hops:
                         edges_hop = edge_lib[np.argwhere(edge_lib[:,0] == hops)]
@@ -158,7 +163,7 @@ for kwargs in ParameterGrid(kwarg_grid):
         for i in range(N_particles):
             if i%100 == 0: print(i/5)
 
-            atoms = grid_particle(kwargs['elements'],5,kwargs['heanp_size'],kwargs["n_hops"],1.0,kwargs["het_mod"],1.0,i)
+            atoms = grid_particle(kwargs['elements'],5,kwargs['heanp_size'],1,1.0,kwargs["het_mod"],1.0,i)
             #view(atoms)
             #traj = Trajectory(f'traj/{len(kwargs["elements"])}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_{str(i).zfill(4)}.traj',atoms=None, mode='w')
             #traj.write(atoms)
