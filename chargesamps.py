@@ -162,12 +162,14 @@ for kwargs in ParameterGrid(kwarg_grid):
         var = np.var(pval_bootstrap)
         theta =  var/mean
         k = mean/theta
-        X = np.linspace(0,50,1000)
-        Y = pdf(X,k,theta)
-
+        X = np.linspace(0,np.max(pval_bootstrap),1000)
+        #Y = pdf(X,k,theta)
+        Y = stats.gamma.pdf(X,k,scale=theta)
+        
+        
         fig, ax = plt.subplots(1, 1, figsize=(8, 8))
-        ax.hist(pval_bootstrap, bins=np.arange(0,50,0.01), histtype='bar', color='steelblue', alpha=0.7)
-        ax.hist(pval_bootstrap, bins=np.arange(0,50,0.01), histtype='step', color='steelblue')
+        ax.hist(pval_bootstrap, bins=np.arange(0,np.max(pval_bootstrap),0.1), histtype='bar', color='steelblue', alpha=0.7)
+        ax.hist(pval_bootstrap, bins=np.arange(0,np.max(pval_bootstrap),0.1), histtype='step', color='steelblue')
         ax2 = ax.twinx()
         ax2.plot(X,Y,color='seagreen')
         fig.savefig(f'charge/{len(kwargs["elements"])}_{kwargs["heanp_size"]}.png')

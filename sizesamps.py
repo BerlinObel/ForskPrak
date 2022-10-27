@@ -199,7 +199,8 @@ for kwargs in ParameterGrid(kwarg_grid):
         theta = var/mean
         k = mean/theta
         X = np.linspace(0,np.max(pval_bootstrap),1000)
-        Y = pdf(X,k,theta)
+        # = pdf(X,k,theta)
+        Y = stats.gamma.pdf(X,k,scale=theta)
 
         fig, ax = plt.subplots(1, 1, figsize=(8, 8))
         ax.hist(pval_bootstrap, bins=5000, histtype='bar', color='steelblue', alpha=0.7)

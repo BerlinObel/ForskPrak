@@ -166,7 +166,7 @@ for kwargs in ParameterGrid(kwarg_grid):
         for i in range(N_particles):
             if i%100 == 0: print(i/5)
 
-            atoms = grid_particle(kwargs['elements'],5,kwargs['heanp_size'],kwargs["n_hops"],1.0,kwargs["het_mod"],1.0,i)
+            atoms = grid_particle(kwargs['elements'],5,kwargs['heanp_size'],kwargs["n_hops"],1.0,kwargs["het_mod"],0.0,i)
             #view(atoms)
             #traj = Trajectory(f'traj/{len(kwargs["elements"])}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_{str(i).zfill(4)}.traj',atoms=None, mode='w')
             #traj.write(atoms)

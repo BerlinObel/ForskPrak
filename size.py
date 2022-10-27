@@ -77,14 +77,13 @@ def grid_particle(elements,starting_size,n_atoms_added,n_hops,bond_score,het_sco
             rnd_symbol = symbol_lib[id]
             if symbol_lib[id] != 'H':
                 edges = edge_lib[np.argwhere(edge_lib[:,0] == id)]
-                print(edges)
+
                 candidates, cand_score= [], []
                 candidates.append(id)
                 cand_score.append(score(id,edges,rnd_symbol,symbol_lib, bond_score, het_score, hom_score))
 
 
                 avail_hops = edges[:,:,1].T[0]
-                print(avail_hops)
                 #print(f"avail_hops: {avail_hops}")
                 if avail_hops.any():
                     for hops in avail_hops:
@@ -163,7 +162,7 @@ for kwargs in ParameterGrid(kwarg_grid):
         for i in range(N_particles):
             if i%100 == 0: print(i/5)
 
-            atoms = grid_particle(kwargs['elements'],5,kwargs['heanp_size'],1,1.0,kwargs["het_mod"],1.0,i)
+            atoms = grid_particle(kwargs['elements'],5,kwargs['heanp_size'],kwargs['n_hops'],1.0,kwargs["het_mod"],0.0,i)
             #view(atoms)
             #traj = Trajectory(f'traj/{len(kwargs["elements"])}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_{str(i).zfill(4)}.traj',atoms=None, mode='w')
             #traj.write(atoms)
@@ -193,8 +192,8 @@ for kwargs in ParameterGrid(kwarg_grid):
         
         
         np.save(f'size/{len(kwargs["elements"])}_{kwargs["heanp_size"]}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}',pval_bootstrap)
-        testpvals = np.load(f"size/sizepvals_{len(kwargs['elements'])}_{kwargs['heanp_size']}.npy")
-        nohopspvals = np.load(f'size/{len(kwargs["elements"])}_{kwargs["heanp_size"]}_0_{kwargs["het_mod"]:.2f}.npy')
+        #testpvals = np.load(f"size/sizepvals_{len(kwargs['elements'])}_{kwargs['heanp_size']}.npy")
+        testpvals = np.load(f'size/{len(kwargs["elements"])}_{kwargs["heanp_size"]}_0_{kwargs["het_mod"]:.2f}.npy')
         med = np.median(pval_bootstrap)
         mean = np.mean(testpvals)
         var = np.var(testpvals)
@@ -204,12 +203,12 @@ for kwargs in ParameterGrid(kwarg_grid):
         Y = pdf(X,k,theta)
         CDF = special.gammainc(k,(med/theta))
         
-        m0 = np.mean(nohopspvals)
-        v0 = np.var(nohopspvals)
-        t0 = v0/m0
-        k0 = m0/t0
-        Y0 = pdf(X,k0,t0)
-        CDF0 = special.gammainc(k0,(med/t0))
+        #m0 = np.mean(nohopspvals)
+        #v0 = np.var(nohopspvals)
+        #t0 = v0/m0
+        #k0 = m0/t0
+        #Y0 = stats.gamma.pdf(X,k0,scale=t0)
+        #CDF0 = special.gammainc(k0,(med/t0))
 
         fig, ax = plt.subplots(1, 1, figsize=(8, 8))
         ax.hist(pval_bootstrap, bins=100, histtype='bar', color='steelblue', alpha=0.7)
@@ -217,11 +216,11 @@ for kwargs in ParameterGrid(kwarg_grid):
         ax.vlines(np.median(pval_bootstrap), 0, ax.get_ylim()[1], color='firebrick')
         ax2 = ax.twinx()
         ax2.plot(X,Y,color='seagreen')
-        ax2.plot(X,Y0,'r--')
+        #ax2.plot(X,Y0,'r--')
         ax.set(ylim=(0, ax.get_ylim()[1] * 1.2))
         ax2.set(ylim=(0, ax2.get_ylim()[1] * 1.2))
         ax.text(0.02, 0.98,r'N$_{elements}$: '+f'{len(kwargs["elements"])}'+'\n'+r'N$_{hops}$: '+f'{kwargs["n_hops"]}'+f'\nBond modifier: {kwargs["het_mod"]:.2f}' +\
-        r'\nMedian $\chi^2$ ='+f' {np.median(pval_bootstrap):.2f} '+f'\nCDF = {CDF:.2f}'+f'\nCDF_charge = {CDF0:.2f}'+ f'\nAdded atoms: ' + f'{kwargs["heanp_size"]}', family='monospace', fontsize=13, transform=ax.transAxes,verticalalignment='top')
+        r'\nMedian $\chi^2$ ='+f' {np.median(pval_bootstrap):.2f} '+f'\nCDF = {CDF:.2f}'+ f'\nAdded atoms: ' + f'{kwargs["heanp_size"]}', family='monospace', fontsize=13, transform=ax.transAxes,verticalalignment='top')
         ax.set_xlabel(r"$\chi^2$", fontsize=16)
         ax.set_ylabel('Frequency', fontsize=16)
         fig.savefig(f'size/{len(kwargs["elements"])}_{kwargs["heanp_size"]}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}.png')
