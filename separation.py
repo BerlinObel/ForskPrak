@@ -157,24 +157,9 @@ for kwargs in ParameterGrid(kwarg_grid):
         bulk_chi = []
         outer_chi = []
         alt_outer = []
-        bulkouter = []
-        if not path.isfile(f'chi_{len(kwargs["elements"])}_{kwargs["heanp_size"]}_edges.npy'):
-            atoms = grid_particle(kwargs['elements'],5,kwargs['heanp_size'],0,1.0,0,0.0,1)
-            view(atoms)
-            #traj = Trajectory(f'traj/{len(kwargs["elements"])}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}_{str(i).zfill(4)}.traj',atoms=None, mode='w')
-            #traj.write(atoms)
-            ana_object = analysis.Analysis(atoms, bothways=True)
-            all_edges = np.c_[np.array(list(ana_object.adjacency_matrix[0].keys()), dtype=np.dtype('int,int'))['f0'],
-                                np.array(list(ana_object.adjacency_matrix[0].keys()), dtype=np.dtype('int,int'))['f1']]
-
-            #remove self-to-self edges
-            all_edges = all_edges[all_edges[:, 0] != all_edges[:, 1]]
-            np.save(f'chi_{len(kwargs["elements"])}_{kwargs["heanp_size"]}_edges',all_edges)
-            symbols = np.array(atoms.get_chemical_symbols())
-            np.save(f'chi_{len(kwargs["elements"])}_{kwargs["heanp_size"]}_symbols',symbols)
-        else:
-            all_edges = np.load(f'chi_{len(kwargs["elements"])}_{kwargs["heanp_size"]}_edges.npy')
-            symbols = np.load(f'chi_{len(kwargs["elements"])}_{kwargs["heanp_size"]}_symbols.npy')
+        bulkouter = []        
+        all_edges = np.load(f'gooder/chi_{len(kwargs["elements"])}_{kwargs["heanp_size"]}_edges.npy')
+        symbols = np.load(f'gooder/chi_{len(kwargs["elements"])}_{kwargs["heanp_size"]}_symbols.npy')
         
         n_bonds = np.zeros(len(symbols))
         for edges in all_edges:
@@ -187,17 +172,7 @@ for kwargs in ParameterGrid(kwarg_grid):
             expected.append(sum(bond == sets) / len(sets))
         
     
-        """
-        for i in range(100):
-            np.random.shuffle(symbols)
-            observed = np.zeros((len(symbols),len(bonds)))
-            for edge in all_edges:
-                observed[edge[0],np.argwhere(set(symbols[edge]) == bonds)[0][0]] += 1  
-
-            #_, _, pval = pearsons_chi2(observed, expected)
-            pval = chi2_square(observed, expected)
-            pval_bootstrap.append(pval)
-        """
+       """
         for i in range(50000):
             np.random.shuffle(symbols)
             outer_atoms = 0
@@ -209,7 +184,14 @@ for kwargs in ParameterGrid(kwarg_grid):
                 else: 
                     observed[1,np.argwhere(set(symbols[edge]) == bonds)[0][0]] += 1  
                     outer_atoms += 1
-
+        """
+    
+        n_expected = np.zeros((12)
+        for edge in all_edges:
+            n_expected[int(n_bonds[edge[0]])] += 1 
+        
+        print(n_expected)
+        
             """
             print(np.average(observed[0,:]/observed[1,:]))
             print(sum(observed[0,:])/sum(observed[1,:]))
@@ -218,7 +200,7 @@ for kwargs in ParameterGrid(kwarg_grid):
             A = 4*np.pi*(r**2)
             print(kwargs['heanp_size']/A)
             """
-
+        """
             both = np.zeros(len(bonds))
             both += observed[0]+observed[1]
             #print(both)
@@ -236,7 +218,7 @@ for kwargs in ParameterGrid(kwarg_grid):
         var_outer = np.var(outer_chi)
         var_comb = np.var(bulkouter)
         var_alt = np.var(alt_outer)
-        """
+        
         t_b =  var_bulk/mean_bulk
         t_o =  var_outer/mean_outer
         t_c = var_comb/mean_comb
@@ -247,7 +229,7 @@ for kwargs in ParameterGrid(kwarg_grid):
         Y_b = pdf(X,k_b,t_b)
         Y_o = pdf(X,k_o,t_o)
         Y_c = pdf(X,k_c,t_c)
-        """
+    
         sigma_b = np.sqrt(var_bulk)
         sigma_o = np.sqrt(var_outer)
         sigma_c = np.sqrt(var_comb)
