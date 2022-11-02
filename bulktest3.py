@@ -72,11 +72,11 @@ def bulk_test(elements):
     bonds = np.array([set(a) for a in list(itertools.combinations_with_replacement(elements, 2))])
     atoms = build_bulk(elements)
     for j in range(1):
-        pbc = True
+        pbc = False
         
 
         print((len(bonds)-1)/2)
-        atoms.pbc[:] = 1
+        atoms.pbc[:] = 0
 
         ana_object = analysis.Analysis(atoms, bothways=False)
         all_edges = np.c_[np.array(list(ana_object.adjacency_matrix[0].keys()), dtype=np.dtype('int,int'))['f0'],
@@ -90,7 +90,7 @@ def bulk_test(elements):
         symbols = np.array(atoms.get_chemical_symbols())
         view(atoms)
 
-        for i in range(100000):
+        for i in range(50000):
             np.random.shuffle(symbols)
 
             observed = np.zeros(len(bonds))
@@ -133,9 +133,9 @@ def bulk_test(elements):
         ax.set_ylabel('Frequency', fontsize=16)
         ax2.set_ylabel('Probability', fontsize=16)
 
-        fig.savefig(f'pvals/bulk_{len(elements)}_{1560}_{pbc}.png')
+        fig.savefig(f'pvals/bulk_{len(elements)}_{1560}_{pbc}t.png')
 
-        np.savetxt(f"bulk_{len(elements)}_{1560}_{pbc}",pval_bulk)
+        np.savetxt(f"bulk_{len(elements)}_{1560}_{pbc}t",pval_bulk)
 
         plt.close()
 
