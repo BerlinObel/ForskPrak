@@ -20,11 +20,14 @@ import sys
 
 def score(id,edges,rnd_symbol,symbols,bond_score,het_score,hom_score):
     score = 0
-    for edge in edges[np.isin(edges[:,1],id)]:
+    edges = edges[:,:,1]
+    for edge in edges:
+        edge_symbol = symbols[edge[0]]
+        if edge_symbol =='H': continue
         score += bond_score
-        if rnd_symbol != symbols[edge[0]]:
+        if rnd_symbol != edge_symbol:
             score += het_score
-        elif rnd_symbol == symbols[edge[0]]:
+        elif rnd_symbol == edge_symbol:
             score += hom_score
     return score
 
@@ -157,14 +160,14 @@ def charge_grid_particle(elements,n_atoms_added,n_hops,bond_score,het_score,hom_
 kwarg_grid = {'elements': [sys.argv[1:]],#[elements[:i+2] for i in range(4)],
               'n_hops': range(7),
               'het_mod': [-0.75],
-              'heanp_size':[250]}
+              'heanp_size':[400]}
 
 
 for kwargs in ParameterGrid(kwarg_grid):
 
         atoms = grid_particle(kwargs['elements'],kwargs['heanp_size'],kwargs['n_hops'],1.0,kwargs['het_mod'],0.0)
         view(atoms)
-        charge_atoms = charge_grid_particle(kwargs['elements'],kwargs['heanp_size'],kwargs['n_hops'],1.0,kwargs['het_mod'],0.0)
-        view(charge_atoms)
+        #charge_atoms = charge_grid_particle(kwargs['elements'],kwargs['heanp_size'],kwargs['n_hops'],1.0,kwargs['het_mod'],0.0)
+        #view(charge_atoms)
        
         

@@ -159,7 +159,7 @@ for kwargs in ParameterGrid(kwarg_grid):
 
         k2 = mean/2
         Y2 = pdf(X,k2,2)
-        Y3 = pdf(X,7,2)
+        Y3 = pdf(X,,2)
 
         fig, ax = plt.subplots(1, 1, figsize=(8, 8))
         ax.hist(pval_bootstrap, bins=np.arange(0,50,0.25), histtype='bar', color='steelblue', alpha=0.7)

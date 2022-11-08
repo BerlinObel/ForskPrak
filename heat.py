@@ -29,9 +29,14 @@ if int(kwarg_grid['test'][0]) == 0: test = "size"
 
 for kwargs in ParameterGrid(kwarg_grid):
 
-    pval_boot = np.load(f'{test}/{kwargs["elements"]}_{kwargs["heanp_size"]}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}.npy')
-    testpvals = np.load(f"{test}/{test}pvals_{kwargs['elements']}_{kwargs['heanp_size']}.npy")
-    noppvals = np.load(f'{test}/{kwargs["elements"]}_{kwargs["heanp_size"]}_0_{kwargs["het_mod"]:.2f}.npy')
+    try: 
+        pval_boot = np.load(f'{test}/{kwargs["elements"]}_{kwargs["heanp_size"]}_{kwargs["n_hops"]}_{kwargs["het_mod"]:.2f}.npy')
+        testpvals = np.load(f"{test}/{test}pvals_{kwargs['elements']}_{kwargs['heanp_size']}.npy")
+        noppvals = np.load(f'{test}/{kwargs["elements"]}_{kwargs["heanp_size"]}_0_{kwargs["het_mod"]:.2f}.npy')
+    except OSError as error:
+        print(error)
+        continue
+    
     med = np.median(pval_boot)
     mean = np.mean(testpvals)
     var = np.var(testpvals)
